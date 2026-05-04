@@ -9,19 +9,24 @@
 repos:
   - repo: local
     hooks:
+      # Delegate to Taskfile so pre-commit and `task check` share one
+      # invocation contract (working directory, flags, etc.).
       - id: yamllint
-        name: yamllint
-        entry: uv run yamllint --strict
+        name: yamllint (via task)
+        entry: task lint:yaml
         language: system
-        types: [yaml]
+        files: \.(ya?ml)$
+        pass_filenames: false
 
       - id: ansible-lint
-        name: ansible-lint
-        entry: uv run ansible-lint
+        name: ansible-lint (via task)
+        entry: task lint:ansible
         language: system
         files: ^ansible/
         pass_filenames: false
 
+      # Betterleaks runs in staged-only mode here (different from the
+      # filesystem scan in `task scan:secrets`), so it's invoked directly.
       - id: betterleaks
         name: Betterleaks secret scan (staged)
         entry: betterleaks protect --staged
