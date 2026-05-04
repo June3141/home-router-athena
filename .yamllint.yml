@@ -7,11 +7,16 @@ rules:
     level: warning
   truthy:
     allowed-values: ['true', 'false', 'yes', 'no']  # Ansible accepts yes/no
+    check-keys: false                               # GHA workflows use `on:` as a key
   comments-indentation: disable
   document-start:
     present: true
 
+# Cannot combine `ignore` with `ignore-from-file`, so list both the
+# project-specific paths and the noisy directories that .gitignore
+# already covers.
 ignore: |
-  .github/
+  .venv/
+  .cache/
   ansible/roles/*/templates/*.j2
   ansible/vars/secrets.yml

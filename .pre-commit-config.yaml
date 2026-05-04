@@ -1,23 +1,27 @@
 ---
-# Install with: task install:hooks  (or `pre-commit install`)
+# Install with: task install:hooks  (= uv run pre-commit install)
+#
+# Hooks shell out to the project's uv-managed virtualenv so the version
+# of every Python tool is pinned in pyproject.toml / uv.lock — single
+# source of truth instead of duplicating versions in `rev:` here.
+# Betterleaks is a Go binary; it is expected on $PATH.
 
 repos:
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
-    hooks:
-      - id: yamllint
-        args: [--strict]
-
-  - repo: https://github.com/ansible/ansible-lint
-    rev: v24.7.0
-    hooks:
-      - id: ansible-lint
-        files: ^ansible/
-
-  # Betterleaks does not yet ship a pre-commit framework definition,
-  # so invoke the locally-installed binary directly.
   - repo: local
     hooks:
+      - id: yamllint
+        name: yamllint
+        entry: uv run yamllint --strict
+        language: system
+        types: [yaml]
+
+      - id: ansible-lint
+        name: ansible-lint
+        entry: uv run ansible-lint
+        language: system
+        files: ^ansible/
+        pass_filenames: false
+
       - id: betterleaks
         name: Betterleaks secret scan (staged)
         entry: betterleaks protect --staged

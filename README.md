@@ -53,20 +53,23 @@ ansible-playbook playbooks/network.yml
 ## ローカルチェック
 
 CI と同じ check を Taskfile 経由でローカル実行する。
+Python 系ツール (yamllint / ansible-lint / pre-commit) は uv 管理の `.venv` に入る。
+Betterleaks は Go バイナリなので $PATH に置く。
 
 ```sh
-# 必要ツール（asdf 等で個別管理。例:）
-pip install yamllint ansible-lint pre-commit
-go install github.com/betterleaks/betterleaks/cmd/betterleaks@latest
-# Task 本体: https://taskfile.dev/installation/
+# 1. ホスト側に必要なもの
+#    - uv:        https://docs.astral.sh/uv/getting-started/installation/
+#    - task:      https://taskfile.dev/installation/
+#    - betterleaks: https://github.com/betterleaks/betterleaks/releases
+#                  からバイナリを取得して ~/.local/bin/ などに設置
 
-# 一覧
-task
+# 2. プロジェクト venv 作成 + dev tools install
+task setup            # = uv sync
 
-# pre-commit hook をインストール（一度だけ）
+# 3. pre-commit hook を有効化（一度だけ）
 task install:hooks
 
-# 全チェック（GHA と同じ内容）
+# 4. 全チェック（GHA と同じ内容）
 task check
 
 # 個別

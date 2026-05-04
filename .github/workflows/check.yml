@@ -14,25 +14,26 @@ jobs:
         with:
           fetch-depth: 0  # full history so secret scan can walk all commits
 
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v4
         with:
-          python-version: '3.12'
+          enable-cache: true
 
       - uses: arduino/setup-task@v2
         with:
           version: '3.x'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install yamllint and ansible-lint
-        run: pip install yamllint ansible-lint
+      - name: Install Python dev tools (uv-managed venv)
+        run: uv sync --frozen
 
       - name: Install Betterleaks
         env:
           BETTERLEAKS_VERSION: "1.1.2"
         run: |
           tmp=$(mktemp -d)
-          curl -fsSL "https://github.com/betterleaks/betterleaks/releases/download/v${BETTERLEAKS_VERSION}/betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz" \
-            | tar -xz -C "$tmp"
+          base="https://github.com/betterleaks/betterleaks/releases/download"
+          tarball="betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL "${base}/v${BETTERLEAKS_VERSION}/${tarball}" | tar -xz -C "$tmp"
           sudo install -m755 "$tmp/betterleaks" /usr/local/bin/
           rm -rf "$tmp"
           betterleaks version
