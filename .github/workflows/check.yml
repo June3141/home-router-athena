@@ -18,10 +18,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-
       - uses: arduino/setup-task@v2
         with:
           version: '3.x'
@@ -31,10 +27,15 @@ jobs:
         run: pip install yamllint ansible-lint
 
       - name: Install Betterleaks
-        # If the cmd path differs once a stable release lands, fall back to
-        # downloading a release binary from
-        # https://github.com/betterleaks/betterleaks/releases
-        run: go install github.com/betterleaks/betterleaks/cmd/betterleaks@latest
+        env:
+          BETTERLEAKS_VERSION: "1.1.2"
+        run: |
+          tmp=$(mktemp -d)
+          curl -fsSL "https://github.com/betterleaks/betterleaks/releases/download/v${BETTERLEAKS_VERSION}/betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C "$tmp"
+          sudo install -m755 "$tmp/betterleaks" /usr/local/bin/
+          rm -rf "$tmp"
+          betterleaks version
 
       - name: Run checks
         run: task check
