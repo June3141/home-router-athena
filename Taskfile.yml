@@ -1,0 +1,40 @@
+---
+version: '3'
+
+silent: true
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  check:
+    desc: Run all checks (lint + secret scan); used by CI and pre-commit
+    deps: [lint, scan:secrets]
+
+  lint:
+    desc: Run all linters
+    cmds:
+      - task: lint:yaml
+      - task: lint:ansible
+
+  lint:yaml:
+    desc: Lint YAML files with yamllint
+    cmds:
+      - yamllint .
+
+  lint:ansible:
+    desc: Lint Ansible content with ansible-lint
+    cmds:
+      - ansible-lint ansible/
+
+  scan:secrets:
+    desc: Scan working tree for committed secrets with Betterleaks
+    cmds:
+      - betterleaks dir .
+
+  install:hooks:
+    desc: Install local pre-commit hooks
+    cmds:
+      - pre-commit install

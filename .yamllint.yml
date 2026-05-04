@@ -1,0 +1,17 @@
+---
+extends: default
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']  # Ansible accepts yes/no
+  comments-indentation: disable
+  document-start:
+    present: true
+
+ignore: |
+  .github/
+  ansible/roles/*/templates/*.j2
+  ansible/vars/secrets.yml
