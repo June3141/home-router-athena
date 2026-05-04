@@ -1,0 +1,10 @@
+---
+# Run ansible-lint from this directory (`task lint:ansible` does so via
+# `dir: ansible`) so that `ansible.cfg`'s `roles_path` resolves correctly.
+profile: production
+
+exclude_paths:
+  - vars/secrets.yml
+
+skip_list:
+  - yaml[line-length]  # delegated to yamllint

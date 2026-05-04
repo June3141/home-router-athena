@@ -30,9 +30,10 @@ tasks:
       - uv run yamllint .
 
   lint:ansible:
-    desc: Lint Ansible content with ansible-lint
+    desc: Lint Ansible content with ansible-lint (run inside ansible/ so ansible.cfg is honored)
+    dir: ansible
     cmds:
-      - uv run ansible-lint ansible/
+      - uv run ansible-lint
 
   scan:secrets:
     desc: Scan working tree for committed secrets with Betterleaks
