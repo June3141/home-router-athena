@@ -1,0 +1,13 @@
+---
+# Phase 2: Unbound + AdGuard Home（実装は後続）
+- name: Phase 2 - DNS スタック
+  hosts: routers
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/common.yml
+  roles:
+    - role: unbound
+      tags: [dns, unbound]
+    - role: adguard
+      tags: [dns, adguard]

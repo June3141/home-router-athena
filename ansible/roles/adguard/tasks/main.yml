@@ -1,0 +1,8 @@
+---
+# TODO: Phase 2 で実装
+# - AdGuard Home の取得・配置（公式インストールスクリプト or 手動）
+# - systemd unit の登録
+# - 上流に Unbound (127.0.0.1:5335 など) を指定
+- name: Phase 2 未実装プレースホルダー
+  ansible.builtin.debug:
+    msg: "adguard role はまだ実装されていません"

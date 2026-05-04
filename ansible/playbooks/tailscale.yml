@@ -1,0 +1,12 @@
+---
+# Phase 3: Tailscale Subnet Router（実装は後続）
+- name: Phase 3 - Tailscale Subnet Router
+  hosts: routers
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/common.yml
+    - ../vars/secrets.yml
+  roles:
+    - role: tailscale
+      tags: [vpn, tailscale]

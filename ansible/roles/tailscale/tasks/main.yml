@@ -1,0 +1,9 @@
+---
+# TODO: Phase 3 で実装
+# - apt repository (pkgs.tailscale.com) を追加
+# - tailscale パッケージをインストール
+# - tailscale up --advertise-routes=... --accept-dns=false --authkey={{ tailscale_authkey }}
+# - 冪等性のため tailscale status の出力で判定する
+- name: Phase 3 未実装プレースホルダー
+  ansible.builtin.debug:
+    msg: "tailscale role はまだ実装されていません"
