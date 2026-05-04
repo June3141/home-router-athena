@@ -1,0 +1,49 @@
+#!/usr/sbin/nft -f
+# Managed by Ansible (network role)
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        ct state established,related accept
+        ct state invalid drop
+
+        iif "lo" accept
+        ip protocol icmp accept
+        ip6 nexthdr icmpv6 accept
+
+        # SSH（許可元 CIDR は inventory / common.yml で絞ること）
+{% for src in network_ssh_allowed_sources %}
+        ip saddr {{ src }} tcp dport 22 accept
+{% endfor %}
+
+        # LAN 側からの管理通信（DHCP/DNS など）
+        iifname "{{ network_lan_interface }}" accept
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+
+        ct state established,related accept
+
+        # LAN -> WAN の出方向のみ許可
+        iifname "{{ network_lan_interface }}" oifname "{{ network_wan_interface }}" accept
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+    }
+}
+
+table inet nat {
+    chain prerouting {
+        type nat hook prerouting priority dstnat;
+    }
+
+    chain postrouting {
+        type nat hook postrouting priority srcnat;
+        oifname "{{ network_wan_interface }}" masquerade
+    }
+}

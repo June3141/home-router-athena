@@ -1,0 +1,9 @@
+# Managed by Ansible (network role)
+[Match]
+Name={{ network_lan_interface }}
+
+[Network]
+Address={{ network_lan_address }}
+{% if network_ipv6_forwarding %}
+IPForward=yes
+{% endif %}

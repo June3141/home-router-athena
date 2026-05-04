@@ -1,0 +1,23 @@
+---
+- name: nftables パッケージをインストール
+  ansible.builtin.apt:
+    name: nftables
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: nftables 設定ファイルを配置
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "nft -c -f %s"
+  notify: reload nftables
+
+- name: nftables を有効化・起動
+  ansible.builtin.systemd:
+    name: nftables
+    enabled: true
+    state: started
