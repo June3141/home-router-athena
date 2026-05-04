@@ -1,12 +1,12 @@
 ---
-- name: dnsmasq パッケージをインストール
+- name: Install dnsmasq package
   ansible.builtin.apt:
     name: dnsmasq
     state: present
     update_cache: true
     cache_valid_time: 3600
 
-- name: dnsmasq LAN 用ドロップイン設定を配置
+- name: Render dnsmasq LAN drop-in config
   ansible.builtin.template:
     src: dnsmasq-lan.conf.j2
     dest: /etc/dnsmasq.d/lan.conf
@@ -15,7 +15,7 @@
     mode: "0644"
   notify: restart dnsmasq
 
-- name: dnsmasq を有効化・起動
+- name: Enable and start dnsmasq service
   ansible.builtin.systemd:
     name: dnsmasq
     enabled: true
