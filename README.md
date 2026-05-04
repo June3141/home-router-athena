@@ -50,6 +50,33 @@ ansible routers -m ping
 ansible-playbook playbooks/network.yml
 ```
 
+## ローカルチェック
+
+CI と同じ check を Taskfile 経由でローカル実行する。
+
+```sh
+# 必要ツール（asdf 等で個別管理。例:）
+pip install yamllint ansible-lint pre-commit
+go install github.com/betterleaks/betterleaks/cmd/betterleaks@latest
+# Task 本体: https://taskfile.dev/installation/
+
+# 一覧
+task
+
+# pre-commit hook をインストール（一度だけ）
+task install:hooks
+
+# 全チェック（GHA と同じ内容）
+task check
+
+# 個別
+task lint:yaml
+task lint:ansible
+task scan:secrets
+```
+
+push / PR 時は `.github/workflows/check.yml` が同じ `task check` を回す。
+
 ## 実行例
 
 ```sh
