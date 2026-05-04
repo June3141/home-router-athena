@@ -35,8 +35,10 @@ ansible/
 ## セットアップ
 
 ```sh
-# 1. inventory を実機に合わせて編集
-$EDITOR ansible/inventory/hosts.yml
+# 1. ホスト固有の値（IP / SSH ユーザー / NIC 名 / LAN セグメント）を設定
+cp ansible/host_vars/athena-lab.yml.example ansible/host_vars/athena-lab.yml
+$EDITOR ansible/host_vars/athena-lab.yml
+# inventory/hosts.yml には構造（どのグループにどのホストがいるか）だけが入る
 
 # 2. secrets を作成（Phase 3 以降で必要）
 cp ansible/vars/secrets.yml.example ansible/vars/secrets.yml
