@@ -1,0 +1,72 @@
+# home-router-athena
+
+Debian ベースのソフトウェアルーター構成を Ansible で IaC 化する実験プロジェクト。
+本番ハード（AIOPCWA AI401）導入前の検証用。
+
+## 構成
+
+```
+ansible/
+├── ansible.cfg
+├── inventory/hosts.yml          # 実験機の接続情報
+├── playbooks/
+│   ├── site.yml                 # 全 Phase エントリポイント
+│   ├── network.yml              # Phase 1: systemd-networkd / nftables / dnsmasq
+│   ├── dns.yml                  # Phase 2: Unbound / AdGuard Home
+│   ├── tailscale.yml            # Phase 3: Tailscale Subnet Router
+│   └── monitoring.yml           # Phase 4: node_exporter
+├── roles/
+│   ├── network/                 # Phase 1 実装
+│   ├── unbound/                 # Phase 2 雛形
+│   ├── adguard/                 # Phase 2 雛形
+│   ├── tailscale/               # Phase 3 雛形
+│   └── node_exporter/           # Phase 4 雛形
+└── vars/
+    ├── common.yml
+    └── secrets.yml.example      # 実体は ansible-vault で暗号化
+```
+
+## 前提
+
+- Ansible 2.15+ / Python 3.10+
+- ターゲットは Debian 12 以降を想定
+- SSH 鍵認証で `ansible_user` に接続でき、sudo がパスワード無しで通ること
+
+## セットアップ
+
+```sh
+# 1. inventory を実機に合わせて編集
+$EDITOR ansible/inventory/hosts.yml
+
+# 2. secrets を作成（Phase 3 以降で必要）
+cp ansible/vars/secrets.yml.example ansible/vars/secrets.yml
+ansible-vault encrypt ansible/vars/secrets.yml
+
+# 3. 疎通確認
+cd ansible
+ansible routers -m ping
+
+# 4. Phase 1 適用
+ansible-playbook playbooks/network.yml
+```
+
+## 実行例
+
+```sh
+# 全 Phase（site.yml が import_playbook している範囲）
+ansible-playbook playbooks/site.yml
+
+# Phase 1 のみ
+ansible-playbook playbooks/network.yml
+
+# 特定タグだけ
+ansible-playbook playbooks/network.yml --tags nftables
+```
+
+## 注意
+
+- `network` ロールは systemd-networkd / nftables / dnsmasq を有効化する。
+  既存の NetworkManager や ifupdown を使っている機体ではセッションが切れる可能性があるため、
+  リモート機への適用前にコンソールアクセス手段を確保しておくこと。
+- MAP-E 設定（andline / JPNE v6プラス）は本番環境向けで未実装。
+- Phase 完了時点でタグを打つ運用 (`git tag phase-1` 等)。
