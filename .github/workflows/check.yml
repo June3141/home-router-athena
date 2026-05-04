@@ -1,0 +1,40 @@
+---
+name: check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  lint-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history so secret scan can walk all commits
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - uses: arduino/setup-task@v2
+        with:
+          version: '3.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install yamllint and ansible-lint
+        run: pip install yamllint ansible-lint
+
+      - name: Install Betterleaks
+        # If the cmd path differs once a stable release lands, fall back to
+        # downloading a release binary from
+        # https://github.com/betterleaks/betterleaks/releases
+        run: go install github.com/betterleaks/betterleaks/cmd/betterleaks@latest
+
+      - name: Run checks
+        run: task check

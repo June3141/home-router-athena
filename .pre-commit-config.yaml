@@ -1,0 +1,26 @@
+---
+# Install with: task install:hooks  (or `pre-commit install`)
+
+repos:
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [--strict]
+
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v24.7.0
+    hooks:
+      - id: ansible-lint
+        files: ^ansible/
+
+  # Betterleaks does not yet ship a pre-commit framework definition,
+  # so invoke the locally-installed binary directly.
+  - repo: local
+    hooks:
+      - id: betterleaks
+        name: Betterleaks secret scan (staged)
+        entry: betterleaks protect --staged
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
