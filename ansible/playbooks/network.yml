@@ -1,0 +1,11 @@
+---
+# Phase 1: systemd-networkd / nftables / dnsmasq / IP forwarding
+- name: Phase 1 - ネットワーク基盤
+  hosts: routers
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/common.yml
+  roles:
+    - role: network
+      tags: network

@@ -1,0 +1,21 @@
+# Managed by Ansible (network role)
+
+interface={{ network_lan_interface }}
+bind-interfaces
+
+# WAN 側では DHCP を絶対に出さない
+no-dhcp-interface={{ network_wan_interface }}
+
+dhcp-range={{ network_lan_dhcp_range_start }},{{ network_lan_dhcp_range_end }},{{ network_lan_dhcp_lease_time }}
+dhcp-option=option:router,{{ network_lan_address.split('/')[0] }}
+dhcp-option=option:dns-server,{{ network_lan_address.split('/')[0] }}
+
+# 上流 DNS（Phase 2 で Unbound/AdGuard に置き換え予定）
+{% for dns in network_upstream_dns %}
+server={{ dns }}
+{% endfor %}
+
+# /etc/resolv.conf を読まない・厳格化
+no-resolv
+domain-needed
+bogus-priv

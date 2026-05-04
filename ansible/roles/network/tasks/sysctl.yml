@@ -1,0 +1,9 @@
+---
+- name: ルーター用 sysctl 設定ファイルを配置
+  ansible.builtin.template:
+    src: 10-router-forwarding.conf.j2
+    dest: /etc/sysctl.d/10-router-forwarding.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload sysctl
