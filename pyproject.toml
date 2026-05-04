@@ -1,0 +1,15 @@
+[project]
+name = "home-router-athena"
+version = "0.0.0"
+description = "Debian-based software router scaffold managed with Ansible IaC."
+requires-python = ">=3.13"
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "yamllint>=1.35",
+    "ansible-lint>=24.7",
+    "pre-commit>=3.7",
+]
