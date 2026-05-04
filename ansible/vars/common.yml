@@ -1,0 +1,18 @@
+---
+# プロジェクト共通変数
+# 各 playbook から vars_files で読み込む
+
+# 上流 DNS（Phase 2 完成後に Unbound/AdGuard に置き換える想定）
+network_upstream_dns:
+  - 1.1.1.1
+  - 1.0.0.1
+
+# DHCP リース時間
+network_lan_dhcp_lease_time: 12h
+
+# IPv6 forwarding（本番環境で MAP-E を使う際に true）
+network_ipv6_forwarding: false
+
+# nftables: SSH 許可元 CIDR（管理 IP が固定なら絞ること）
+network_ssh_allowed_sources:
+  - 0.0.0.0/0
