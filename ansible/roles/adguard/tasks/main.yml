@@ -16,12 +16,17 @@
         cmd: "{{ adguard_home_install_dir }}/AdGuardHome --version"
       register: adguard_installed_version_cmd
       changed_when: false
-      when: adguard_binary.stat.exists
+      failed_when: false  # 壊れた / 別 arch のバイナリでも fail させずに再 install へ進める
+      when:
+        - adguard_binary.stat.exists
+        - adguard_binary.stat.executable
 
     - name: Decide whether install/upgrade is needed
       ansible.builtin.set_fact:
         adguard_needs_install: >-
           {{ not adguard_binary.stat.exists
+             or not adguard_binary.stat.executable
+             or (adguard_installed_version_cmd.rc | default(1)) != 0
              or adguard_home_version not in (adguard_installed_version_cmd.stdout | default('')) }}
 
 - name: Install or upgrade AdGuard Home binary
