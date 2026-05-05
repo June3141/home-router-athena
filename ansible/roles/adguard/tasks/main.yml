@@ -4,6 +4,17 @@
 # この role では「バイナリ + systemd unit」までを冪等に管理し、
 # AdGuardHome.yaml は WebUI 側で owner するため Ansible からは触らない。
 
+- name: Sanity-check that LAN port 53 is free for AdGuard Home
+  ansible.builtin.assert:
+    that:
+      - network_dnsmasq_dns_enabled is defined
+      - not network_dnsmasq_dns_enabled
+    fail_msg: |
+      AdGuard Home wants LAN:53 but the network role still has dnsmasq's
+      DNS enabled. Set `network_dnsmasq_dns_enabled: false` in
+      host_vars/<host>.yml and re-apply network.yml (or run via site.yml,
+      which orders the phases correctly).
+
 - name: Ensure AdGuard Home system group exists
   ansible.builtin.group:
     name: "{{ adguard_home_group }}"
