@@ -18,6 +18,10 @@ jobs:
       - uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
+          # Pin Python explicitly so CI does not silently drift when
+          # ubuntu-latest's preinstalled Python changes. Must satisfy
+          # `requires-python` in pyproject.toml.
+          python-version: '3.13'
 
       - uses: arduino/setup-task@v2
         with:
