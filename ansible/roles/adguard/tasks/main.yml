@@ -40,11 +40,28 @@
         group: root
         mode: "0755"
 
+    - name: Fetch AdGuard Home release checksums
+      ansible.builtin.uri:
+        url: "{{ adguard_home_release_base_url }}/v{{ adguard_home_version }}/checksums.txt"
+        return_content: true
+      register: adguard_checksums
+
+    - name: Extract sha256 for our tarball
+      # checksums.txt は `<hash>  ./<filename>` 形式 (`./` prefix 付き)。
+      # Ansible の get_url が URL 直渡しでこの prefix を扱う動作が不安定
+      # なので、ここで自前 parse して literal hash を get_url に渡す。
+      ansible.builtin.set_fact:
+        adguard_tarball_sha256: >-
+          {{ (adguard_checksums.content.split('\n')
+              | select('search', adguard_home_tarball ~ '$')
+              | first).split()[0] }}
+
     - name: Download AdGuard Home release tarball
       ansible.builtin.get_url:
         url: "{{ adguard_home_release_base_url }}/v{{ adguard_home_version }}/{{ adguard_home_tarball }}"
         dest: "/tmp/{{ adguard_home_tarball }}"
         mode: "0644"
+        checksum: "sha256:{{ adguard_tarball_sha256 }}"
 
     - name: Extract AdGuard Home tarball
       ansible.builtin.unarchive:
