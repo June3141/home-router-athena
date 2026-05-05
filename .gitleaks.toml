@@ -7,8 +7,7 @@
 useDefault = true
 
 [allowlist]
-description = "Allow placeholder secrets in templates and docs"
+description = "Allow placeholder secrets in template files only"
 paths = [
   '''ansible/vars/secrets\.yml\.example''',
-  '''README\.md''',
 ]
