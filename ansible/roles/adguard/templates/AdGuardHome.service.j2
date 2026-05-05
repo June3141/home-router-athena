@@ -1,0 +1,18 @@
+# Managed by Ansible (adguard role)
+[Unit]
+Description=AdGuard Home: Network-level blocker
+ConditionFileIsExecutable={{ adguard_home_install_dir }}/AdGuardHome
+After=syslog.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+StandardOutput=file:/var/log/AdGuardHome.out.log
+StandardError=file:/var/log/AdGuardHome.err.log
+WorkingDirectory={{ adguard_home_install_dir }}
+ExecStart={{ adguard_home_install_dir }}/AdGuardHome -s run
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

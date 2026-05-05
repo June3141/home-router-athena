@@ -1,8 +1,95 @@
 ---
-# TODO: Phase 2 で実装
-# - AdGuard Home の取得・配置（公式インストールスクリプト or 手動）
-# - systemd unit の登録
-# - 上流に Unbound (127.0.0.1:5335 など) を指定
-- name: Phase 2 未実装プレースホルダー
-  ansible.builtin.debug:
-    msg: "adguard role はまだ実装されていません"
+# 初回起動時の admin ユーザー / 上流 DNS / フィルタ設定は
+# WebUI の first-run wizard (http://<ROUTER_LAN_IP>:3000) で行う前提。
+# この role では「バイナリ + systemd unit」までを冪等に管理し、
+# AdGuardHome.yaml は WebUI 側で owner するため Ansible からは触らない。
+
+- name: Detect current AdGuard Home install
+  block:
+    - name: Stat AdGuard Home binary
+      ansible.builtin.stat:
+        path: "{{ adguard_home_install_dir }}/AdGuardHome"
+      register: adguard_binary
+
+    - name: Read installed AdGuard Home version
+      ansible.builtin.command:
+        cmd: "{{ adguard_home_install_dir }}/AdGuardHome --version"
+      register: adguard_installed_version_cmd
+      changed_when: false
+      when: adguard_binary.stat.exists
+
+    - name: Decide whether install/upgrade is needed
+      ansible.builtin.set_fact:
+        adguard_needs_install: >-
+          {{ not adguard_binary.stat.exists
+             or adguard_home_version not in (adguard_installed_version_cmd.stdout | default('')) }}
+
+- name: Install or upgrade AdGuard Home binary
+  when: adguard_needs_install
+  block:
+    - name: Create AdGuard Home install directory
+      ansible.builtin.file:
+        path: "{{ adguard_home_install_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Download AdGuard Home release tarball
+      ansible.builtin.get_url:
+        url: "{{ release_base }}/v{{ adguard_home_version }}/{{ tarball }}"
+        dest: "/tmp/{{ tarball }}"
+        mode: "0644"
+      vars:
+        release_base: https://github.com/AdguardTeam/AdGuardHome/releases/download
+        tarball: AdGuardHome_linux_amd64.tar.gz
+
+    - name: Extract AdGuard Home tarball
+      ansible.builtin.unarchive:
+        src: "/tmp/AdGuardHome_linux_amd64.tar.gz"
+        dest: "/tmp/"
+        remote_src: true
+
+    - name: Install AdGuard Home binary
+      ansible.builtin.copy:
+        src: "/tmp/AdGuardHome/AdGuardHome"
+        dest: "{{ adguard_home_install_dir }}/AdGuardHome"
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0755"
+      notify: restart AdGuardHome
+
+    - name: Clean up download artifacts
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/tmp/AdGuardHome_linux_amd64.tar.gz"
+        - "/tmp/AdGuardHome"
+
+- name: Install sample user-rules reference file
+  ansible.builtin.copy:
+    src: sample-user-rules.txt
+    dest: "{{ adguard_home_install_dir }}/sample-user-rules.txt"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install AdGuard Home systemd unit
+  ansible.builtin.template:
+    src: AdGuardHome.service.j2
+    dest: /etc/systemd/system/AdGuardHome.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - reload systemd
+    - restart AdGuardHome
+
+- name: Enable and start AdGuard Home
+  ansible.builtin.systemd:
+    name: AdGuardHome
+    enabled: true
+    state: started
+    daemon_reload: true

@@ -1,0 +1,7 @@
+---
+# adguard ロール既定値
+# inventory / host_vars で上書き可
+
+# https://github.com/AdguardTeam/AdGuardHome/releases から確認
+adguard_home_version: "0.107.62"
+adguard_home_install_dir: /opt/AdGuardHome
