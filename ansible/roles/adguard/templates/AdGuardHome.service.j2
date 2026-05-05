@@ -10,6 +10,11 @@ Type=simple
 User={{ adguard_home_user }}
 Group={{ adguard_home_group }}
 
+# journald に流す。AdGuard Home 自身も内部 query log を持つので、
+# systemd 側のログは「起動・停止・クラッシュ」程度しか出ない想定。
+StandardOutput=journal
+StandardError=journal
+
 # Privileged port (53) bind without running as root.
 # CAP_NET_RAW は ICMP / DHCP discover で使う。
 AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_RAW
