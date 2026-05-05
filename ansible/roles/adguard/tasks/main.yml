@@ -114,8 +114,8 @@
 
 - name: Install sample user-rules reference file
   ansible.builtin.copy:
-    src: sample-user-rules.txt
-    dest: "{{ adguard_home_install_dir }}/sample-user-rules.txt"
+    src: sample-user-rules.yml
+    dest: "{{ adguard_home_install_dir }}/sample-user-rules.yml"
     owner: "{{ adguard_home_user }}"
     group: "{{ adguard_home_group }}"
     mode: "0644"
