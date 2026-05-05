@@ -4,6 +4,20 @@
 # この role では「バイナリ + systemd unit」までを冪等に管理し、
 # AdGuardHome.yaml は WebUI 側で owner するため Ansible からは触らない。
 
+- name: Ensure AdGuard Home system group exists
+  ansible.builtin.group:
+    name: "{{ adguard_home_group }}"
+    system: true
+
+- name: Ensure AdGuard Home system user exists
+  ansible.builtin.user:
+    name: "{{ adguard_home_user }}"
+    group: "{{ adguard_home_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ adguard_home_install_dir }}"
+    create_home: false
+
 - name: Detect current AdGuard Home install
   block:
     - name: Stat AdGuard Home binary
@@ -36,8 +50,8 @@
       ansible.builtin.file:
         path: "{{ adguard_home_install_dir }}"
         state: directory
-        owner: root
-        group: root
+        owner: "{{ adguard_home_user }}"
+        group: "{{ adguard_home_group }}"
         mode: "0755"
 
     - name: Fetch AdGuard Home release checksums
@@ -74,8 +88,8 @@
         src: "/tmp/AdGuardHome/AdGuardHome"
         dest: "{{ adguard_home_install_dir }}/AdGuardHome"
         remote_src: true
-        owner: root
-        group: root
+        owner: "{{ adguard_home_user }}"
+        group: "{{ adguard_home_group }}"
         mode: "0755"
       notify: restart AdGuardHome
 
@@ -91,8 +105,8 @@
   ansible.builtin.copy:
     src: sample-user-rules.txt
     dest: "{{ adguard_home_install_dir }}/sample-user-rules.txt"
-    owner: root
-    group: root
+    owner: "{{ adguard_home_user }}"
+    group: "{{ adguard_home_group }}"
     mode: "0644"
 
 - name: Install AdGuard Home systemd unit
