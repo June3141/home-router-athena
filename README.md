@@ -35,8 +35,10 @@ ansible/
 ## セットアップ
 
 ```sh
-# 1. inventory を実機に合わせて編集
-$EDITOR ansible/inventory/hosts.yml
+# 1. ホスト固有の値（IP / SSH ユーザー / NIC 名 / LAN セグメント）を設定
+cp ansible/host_vars/athena-lab.yml.example ansible/host_vars/athena-lab.yml
+$EDITOR ansible/host_vars/athena-lab.yml
+# inventory/hosts.yml には構造（どのグループにどのホストがいるか）だけが入る
 
 # 2. secrets を作成（Phase 3 以降で必要）
 cp ansible/vars/secrets.yml.example ansible/vars/secrets.yml
@@ -49,6 +51,38 @@ ansible routers -m ping
 # 4. Phase 1 適用
 ansible-playbook playbooks/network.yml
 ```
+
+## ローカルチェック
+
+CI と同じ check を Taskfile 経由でローカル実行する。
+Python 系ツール (yamllint / ansible-lint / pre-commit) は uv 管理の `.venv` に入る。
+Betterleaks は Go バイナリなので $PATH に置く。
+
+```sh
+# 1. ホスト側に必要なもの
+#    - uv:        https://docs.astral.sh/uv/getting-started/installation/
+#    - task:      https://taskfile.dev/installation/
+#    - betterleaks: https://github.com/betterleaks/betterleaks/releases
+#                  からバイナリを取得して ~/.local/bin/ などに設置
+
+# 2. プロジェクト venv 作成 + dev tools install
+task setup            # = uv sync
+
+# 3. pre-commit + pre-push hook を有効化（一度だけ）
+#    pre-commit: 各 commit で staged 差分を Betterleaks にかける
+#    pre-push:   push 直前に working tree + git history 全体をスキャン
+task install:hooks
+
+# 4. 全チェック（GHA と同じ内容）
+task check
+
+# 個別
+task lint:yaml
+task lint:ansible
+task scan:secrets        # working tree + git history を Betterleaks で走査
+```
+
+push / PR 時は `.github/workflows/check.yml` が同じ `task check` を回す。
 
 ## 実行例
 

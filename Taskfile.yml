@@ -1,0 +1,47 @@
+---
+version: '3'
+
+silent: true
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  setup:
+    desc: Install Python dev tools into the project virtualenv (uv-managed)
+    cmds:
+      - uv sync
+
+  check:
+    desc: Run all checks (lint + secret scan); used by CI and pre-commit
+    deps: [lint, scan:secrets]
+
+  lint:
+    desc: Run all linters
+    cmds:
+      - task: lint:yaml
+      - task: lint:ansible
+
+  lint:yaml:
+    desc: Lint YAML files with yamllint
+    cmds:
+      - uv run yamllint .
+
+  lint:ansible:
+    desc: Lint Ansible content with ansible-lint (run inside ansible/ so ansible.cfg is honored)
+    dir: ansible
+    cmds:
+      - uv run ansible-lint
+
+  scan:secrets:
+    desc: Scan working tree (incl. untracked) AND full git history for secrets
+    cmds:
+      - betterleaks dir .
+      - betterleaks git .
+
+  install:hooks:
+    desc: Install local pre-commit + pre-push hooks
+    cmds:
+      - uv run pre-commit install --hook-type pre-commit --hook-type pre-push
