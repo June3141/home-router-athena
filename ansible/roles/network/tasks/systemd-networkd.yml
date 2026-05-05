@@ -1,11 +1,11 @@
 ---
-- name: systemd-networkd を有効化・起動
+- name: Enable and start systemd-networkd
   ansible.builtin.systemd:
     name: systemd-networkd
     enabled: true
     state: started
 
-- name: WAN 用 .network ファイルを配置
+- name: Render WAN .network file
   ansible.builtin.template:
     src: 10-wan.network.j2
     dest: "/etc/systemd/network/10-{{ network_wan_interface }}.network"
@@ -14,7 +14,7 @@
     mode: "0644"
   notify: restart systemd-networkd
 
-- name: LAN 用 .network ファイルを配置
+- name: Render LAN .network file
   ansible.builtin.template:
     src: 20-lan.network.j2
     dest: "/etc/systemd/network/20-{{ network_lan_interface }}.network"

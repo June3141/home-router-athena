@@ -1,0 +1,47 @@
+---
+name: check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history so secret scan can walk all commits
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          # Pin Python explicitly so CI does not silently drift when
+          # ubuntu-latest's preinstalled Python changes. Must satisfy
+          # `requires-python` in pyproject.toml.
+          python-version: '3.13'
+
+      - uses: arduino/setup-task@v2
+        with:
+          version: '3.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Python dev tools (uv-managed venv)
+        run: uv sync --frozen
+
+      - name: Install Betterleaks
+        env:
+          BETTERLEAKS_VERSION: "1.1.2"
+        run: |
+          tmp=$(mktemp -d)
+          base="https://github.com/betterleaks/betterleaks/releases/download"
+          tarball="betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL "${base}/v${BETTERLEAKS_VERSION}/${tarball}" | tar -xz -C "$tmp"
+          sudo install -m755 "$tmp/betterleaks" /usr/local/bin/
+          rm -rf "$tmp"
+          betterleaks version
+
+      - name: Run checks
+        run: task check

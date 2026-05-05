@@ -423,3 +423,6 @@ ansible/vars/secrets.yml
 
 # asdf / mise の tool-versions は開発者ローカル環境扱い
 .tool-versions
+
+# host_vars の実体は環境固有なので除外（雛形 *.yml.example のみ commit）
+ansible/host_vars/*.yml

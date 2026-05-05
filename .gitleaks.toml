@@ -1,0 +1,13 @@
+# Betterleaks (drop-in replacement for Gitleaks) configuration.
+# The filename `.gitleaks.toml` is used because Betterleaks reads the
+# Gitleaks config format unchanged.
+# Ref: https://github.com/betterleaks/betterleaks
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow placeholder secrets in template files only"
+paths = [
+  '''ansible/vars/secrets\.yml\.example''',
+]

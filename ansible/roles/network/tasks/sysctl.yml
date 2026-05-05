@@ -1,5 +1,5 @@
 ---
-- name: ルーター用 sysctl 設定ファイルを配置
+- name: Install router sysctl configuration
   ansible.builtin.template:
     src: 10-router-forwarding.conf.j2
     dest: /etc/sysctl.d/10-router-forwarding.conf

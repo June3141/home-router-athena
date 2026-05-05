@@ -1,0 +1,45 @@
+---
+# Install with: task install:hooks  (= uv run pre-commit install)
+#
+# Hooks shell out to the project's uv-managed virtualenv so the version
+# of every Python tool is pinned in pyproject.toml / uv.lock — single
+# source of truth instead of duplicating versions in `rev:` here.
+# Betterleaks is a Go binary; it is expected on $PATH.
+
+repos:
+  - repo: local
+    hooks:
+      # Delegate to Taskfile so pre-commit and `task check` share one
+      # invocation contract (working directory, flags, etc.).
+      - id: yamllint
+        name: yamllint (via task)
+        entry: task lint:yaml
+        language: system
+        files: \.(ya?ml)$
+        pass_filenames: false
+
+      - id: ansible-lint
+        name: ansible-lint (via task)
+        entry: task lint:ansible
+        language: system
+        files: ^ansible/
+        pass_filenames: false
+
+      # pre-commit stage: cheap staged-only scan on every `git commit`
+      # so typos & WIP slips get caught immediately.
+      - id: betterleaks-staged
+        name: Betterleaks secret scan (staged)
+        entry: betterleaks protect --staged
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      # pre-push stage: thorough scan of the working tree AND the full
+      # git history before anything leaves the machine. Same command as
+      # `task check` so CI and the local pre-push gate stay aligned.
+      - id: betterleaks-full
+        name: Betterleaks secret scan (working tree + git history)
+        entry: task scan:secrets
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

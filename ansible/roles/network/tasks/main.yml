@@ -1,16 +1,16 @@
 ---
-- name: sysctl - IP フォワーディング有効化
+- name: Configure IP forwarding via sysctl
   ansible.builtin.import_tasks: sysctl.yml
   tags: [network, sysctl]
 
-- name: systemd-networkd - インターフェース定義
+- name: Configure systemd-networkd interfaces
   ansible.builtin.import_tasks: systemd-networkd.yml
   tags: [network, systemd-networkd]
 
-- name: nftables - NAT / ファイアウォール
+- name: Configure nftables NAT and firewall
   ansible.builtin.import_tasks: nftables.yml
   tags: [network, nftables]
 
-- name: dnsmasq - DHCP サーバー
+- name: Configure dnsmasq DHCP server
   ansible.builtin.import_tasks: dnsmasq.yml
   tags: [network, dnsmasq]
