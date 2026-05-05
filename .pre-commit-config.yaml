@@ -25,11 +25,21 @@ repos:
         files: ^ansible/
         pass_filenames: false
 
-      # Betterleaks runs in staged-only mode here (different from the
-      # filesystem scan in `task scan:secrets`), so it's invoked directly.
-      - id: betterleaks
+      # pre-commit stage: cheap staged-only scan on every `git commit`
+      # so typos & WIP slips get caught immediately.
+      - id: betterleaks-staged
         name: Betterleaks secret scan (staged)
         entry: betterleaks protect --staged
         language: system
         pass_filenames: false
         stages: [pre-commit]
+
+      # pre-push stage: thorough scan of the working tree AND the full
+      # git history before anything leaves the machine. Same command as
+      # `task check` so CI and the local pre-push gate stay aligned.
+      - id: betterleaks-full
+        name: Betterleaks secret scan (working tree + git history)
+        entry: task scan:secrets
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

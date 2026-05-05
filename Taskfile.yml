@@ -36,11 +36,12 @@ tasks:
       - uv run ansible-lint
 
   scan:secrets:
-    desc: Scan working tree for committed secrets with Betterleaks
+    desc: Scan working tree (incl. untracked) AND full git history for secrets
     cmds:
       - betterleaks dir .
+      - betterleaks git .
 
   install:hooks:
-    desc: Install local pre-commit hooks
+    desc: Install local pre-commit + pre-push hooks
     cmds:
-      - uv run pre-commit install
+      - uv run pre-commit install --hook-type pre-commit --hook-type pre-push

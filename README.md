@@ -68,7 +68,9 @@ Betterleaks は Go バイナリなので $PATH に置く。
 # 2. プロジェクト venv 作成 + dev tools install
 task setup            # = uv sync
 
-# 3. pre-commit hook を有効化（一度だけ）
+# 3. pre-commit + pre-push hook を有効化（一度だけ）
+#    pre-commit: 各 commit で staged 差分を Betterleaks にかける
+#    pre-push:   push 直前に working tree + git history 全体をスキャン
 task install:hooks
 
 # 4. 全チェック（GHA と同じ内容）
@@ -77,7 +79,7 @@ task check
 # 個別
 task lint:yaml
 task lint:ansible
-task scan:secrets
+task scan:secrets        # working tree + git history を Betterleaks で走査
 ```
 
 push / PR 時は `.github/workflows/check.yml` が同じ `task check` を回す。
