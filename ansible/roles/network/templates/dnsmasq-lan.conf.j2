@@ -6,11 +6,18 @@ bind-interfaces
 # WAN 側では DHCP を絶対に出さない
 no-dhcp-interface={{ network_wan_interface }}
 
+{% if not network_dnsmasq_dns_enabled %}
+# DNS は AdGuard Home が LAN:53 で受け持つので dnsmasq の DNS は停止
+# (dhcp-option:dns-server は依然として LAN_IP を返す = AdGuard を指す)
+port=0
+{% endif %}
+
 dhcp-range={{ network_lan_dhcp_range_start }},{{ network_lan_dhcp_range_end }},{{ network_lan_dhcp_lease_time }}
 dhcp-option=option:router,{{ network_lan_address.split('/')[0] }}
 dhcp-option=option:dns-server,{{ network_lan_address.split('/')[0] }}
 
-# 上流 DNS（Phase 2 で Unbound/AdGuard に置き換え予定）
+{% if network_dnsmasq_dns_enabled %}
+# 上流 DNS（Phase 2 で AdGuard Home に置き換える運用）
 {% for dns in network_upstream_dns %}
 server={{ dns }}
 {% endfor %}
@@ -19,3 +26,4 @@ server={{ dns }}
 no-resolv
 domain-needed
 bogus-priv
+{% endif %}

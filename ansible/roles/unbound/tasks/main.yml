@@ -1,9 +1,23 @@
 ---
-# TODO: Phase 2 で実装
-# - unbound パッケージのインストール
-# - /etc/unbound/unbound.conf.d/ のドロップイン設定
-# - root.hints の取得
-# - AdGuard Home からの問い合わせを受けるリスナー設定
-- name: Phase 2 未実装プレースホルダー
-  ansible.builtin.debug:
-    msg: "unbound role はまだ実装されていません"
+- name: Install unbound package
+  ansible.builtin.apt:
+    name: unbound
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Render unbound drop-in config
+  ansible.builtin.template:
+    src: router.conf.j2
+    dest: /etc/unbound/unbound.conf.d/router.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "unbound-checkconf %s"
+  notify: restart unbound
+
+- name: Enable and start unbound service
+  ansible.builtin.systemd:
+    name: unbound
+    enabled: true
+    state: started

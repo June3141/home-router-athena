@@ -1,5 +1,10 @@
 ---
-# Phase 2: Unbound + AdGuard Home（実装は後続）
+# Phase 2: Unbound (recursive resolver) + AdGuard Home (filtering DNS frontend)
+#
+# AdGuard Home が LAN:53 を持つので、事前に host_vars/<host>.yml で
+# `network_dnsmasq_dns_enabled: false` を設定し、Phase 1 (network.yml) を
+# 一度流して dnsmasq の port=0 を反映させておくこと。site.yml 経由なら
+# 自動的にこの順で適用される。
 - name: Phase 2 - DNS スタック
   hosts: routers
   become: true

@@ -1,0 +1,46 @@
+# Managed by Ansible (adguard role)
+[Unit]
+Description=AdGuard Home: Network-level blocker
+ConditionFileIsExecutable={{ adguard_home_install_dir }}/AdGuardHome
+After=syslog.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ adguard_home_user }}
+Group={{ adguard_home_group }}
+
+# journald に流す。AdGuard Home 自身も内部 query log を持つので、
+# systemd 側のログは「起動・停止・クラッシュ」程度しか出ない想定。
+StandardOutput=journal
+StandardError=journal
+
+# Privileged port (53) bind without running as root.
+# CAP_NET_RAW は ICMP / DHCP discover で使う。
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW
+
+# systemd sandboxing
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths={{ adguard_home_install_dir }}
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictNamespaces=yes
+SystemCallArchitectures=native
+
+WorkingDirectory={{ adguard_home_install_dir }}
+ExecStart={{ adguard_home_install_dir }}/AdGuardHome -s run
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

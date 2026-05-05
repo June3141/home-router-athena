@@ -1,0 +1,41 @@
+---
+# AdGuard Home — sample custom filtering rules.
+#
+# AdGuard Home の Settings → Filters → Custom filtering rules に貼る用
+# のテンプレート。`rules:` 配下の文字列をそのまま 1 行ずつ貼れば
+# 適用される (YAML 装飾は除く)。AdGuardHome.yaml の `user_rules:`
+# 配列構造とも親和性があるので、将来 Ansible 側で AdGuardHome.yaml を
+# 部分テンプレ化する際にここから流し込む経路も組みやすい。
+#
+# これらは *exclusion* (allowlist) — DNS レベルでブロックされたら
+# 困るサイトをフィルタ対象外にする。広告と本体コンテンツが同じ
+# ドメインから配信されるサイトは DNS では分離不可なので、DNS では
+# 除外してブラウザ拡張 (uBlock Origin など) で要素レベルの広告
+# ブロックを行う、というのが基本戦略。
+#
+# Schema (convention; not currently machine-enforced):
+#   - allowlists[].name    — 必須。識別子 / ログで何を allowlist してるかの目印
+#   - allowlists[].rules   — 必須。AdGuard 構文の rule 文字列の配列
+#   - allowlists[].reason  — **省略可だが強く推奨**。
+#                            DNS allowlist は本来ブロックすべき相手を素通し
+#                            させる操作なので、半年後の自分が「なぜこれを
+#                            allowlist したのか」を辿れるよう必ず残しておく。
+
+allowlists:
+  - name: YouTube
+    reason: >-
+      Same-domain ad delivery — *.googlevideo.com carries both video
+      chunks and ad inserts. Blocking it via DNS either kills playback
+      or has no effect.
+    rules:
+      - "@@||youtube.com^"
+      - "@@||youtu.be^"
+      - "@@||googlevideo.com^"
+      - "@@||ytimg.com^"
+      - "@@||ggpht.com^"
+
+  # 追加例 (DNS 検出で詰まるサイトが出てきたらここに足す):
+  # - name: <site name>
+  #   reason: <なぜ DNS で切れないか / 切るべきでないか>
+  #   rules:
+  #     - "@@||example.com^"

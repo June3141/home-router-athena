@@ -14,6 +14,11 @@ network_upstream_dns:
   - 1.1.1.1
   - 1.0.0.1
 
+# Phase 1 単独運用ではこのまま (dnsmasq が LAN:53 で DNS 受ける)。
+# Phase 2 以降で AdGuard Home を入れたら host_vars で false に上書きし、
+# dnsmasq は port=0 で DNS を停止して DHCP のみに専念させる。
+network_dnsmasq_dns_enabled: true
+
 network_ipv6_forwarding: false
 
 network_ssh_allowed_sources:
