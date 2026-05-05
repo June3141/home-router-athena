@@ -1,0 +1,14 @@
+---
+# unbound ロール既定値
+# inventory / host_vars で上書き可
+
+# 上流に置く AdGuard Home からのみ問い合わせを受ける想定
+unbound_listen_address: 127.0.0.1
+unbound_listen_port: 5335
+
+# キャッシュサイズ（Unbound 推奨: rrset = msg の 2 倍）
+unbound_msg_cache_size: 32m
+unbound_rrset_cache_size: 64m
+
+unbound_cache_min_ttl: 60
+unbound_cache_max_ttl: 86400
