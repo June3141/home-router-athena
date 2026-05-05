@@ -5,10 +5,13 @@
 - name: Phase 1 - ネットワーク基盤
   ansible.builtin.import_playbook: network.yml
 
-# Phase 2 以降は雛形のみ。実装完了次第 import を有効化する。
-# - name: Phase 2 - DNS スタック
-#   ansible.builtin.import_playbook: dns.yml
-#
+- name: Phase 2 - DNS スタック
+  ansible.builtin.import_playbook: dns.yml
+
+# Phase 3 以降は雛形のみ。実装完了次第 import を有効化する。
+# Phase 3 着手時に Netbird に移行予定 (project_vpn_choice 参照)、
+# その時点でファイル名も netbird.yml にリネーム。今は stub に合わせて
+# Tailscale 表記のままにしておく。
 # - name: Phase 3 - Tailscale Subnet Router
 #   ansible.builtin.import_playbook: tailscale.yml
 #

@@ -1,0 +1,30 @@
+# Managed by Ansible (unbound role)
+server:
+    interface: {{ unbound_listen_address }}
+    port: {{ unbound_listen_port }}
+
+    # Loopback からの問い合わせのみ受ける（AdGuard Home の上流）
+    access-control: 127.0.0.0/8 allow
+    access-control: 0.0.0.0/0 refuse
+
+    # ハードニング
+    harden-glue: yes
+    harden-dnssec-stripped: yes
+    harden-below-nxdomain: yes
+    use-caps-for-id: no
+
+    # DNSSEC（Debian の unbound パッケージが root.key を維持）
+    auto-trust-anchor-file: "/var/lib/unbound/root.key"
+
+    # キャッシュ
+    cache-min-ttl: {{ unbound_cache_min_ttl }}
+    cache-max-ttl: {{ unbound_cache_max_ttl }}
+    msg-cache-size: {{ unbound_msg_cache_size }}
+    rrset-cache-size: {{ unbound_rrset_cache_size }}
+
+    # プライバシー
+    qname-minimisation: yes
+
+    # ログは最小限（運用時に dump したくなったら verbosity を上げる）
+    verbosity: 1
+    log-queries: no
