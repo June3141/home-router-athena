@@ -42,16 +42,13 @@
 
     - name: Download AdGuard Home release tarball
       ansible.builtin.get_url:
-        url: "{{ release_base }}/v{{ adguard_home_version }}/{{ tarball }}"
-        dest: "/tmp/{{ tarball }}"
+        url: "{{ adguard_home_release_base_url }}/v{{ adguard_home_version }}/{{ adguard_home_tarball }}"
+        dest: "/tmp/{{ adguard_home_tarball }}"
         mode: "0644"
-      vars:
-        release_base: https://github.com/AdguardTeam/AdGuardHome/releases/download
-        tarball: AdGuardHome_linux_amd64.tar.gz
 
     - name: Extract AdGuard Home tarball
       ansible.builtin.unarchive:
-        src: "/tmp/AdGuardHome_linux_amd64.tar.gz"
+        src: "/tmp/{{ adguard_home_tarball }}"
         dest: "/tmp/"
         remote_src: true
 
@@ -70,7 +67,7 @@
         path: "{{ item }}"
         state: absent
       loop:
-        - "/tmp/AdGuardHome_linux_amd64.tar.gz"
+        - "/tmp/{{ adguard_home_tarball }}"
         - "/tmp/AdGuardHome"
 
 - name: Install sample user-rules reference file
