@@ -63,7 +63,13 @@ tasks:
         playbooks/bootstrap.yml
 
   play:bootstrap:dry:
-    desc: 'Dry-run Phase 0 bootstrap (same vars as play:bootstrap)'
+    # Caveat: the bootstrap role uses ansible.posix.authorized_key without
+    # an explicit `path:`, which fails under --check on a fresh host where
+    # the management user does not yet exist (issue #52). This task is
+    # therefore reliable only as an idempotency check against an already-
+    # bootstrapped host. Drop it from your toolbox for first-time runs
+    # until #52 is in.
+    desc: 'Dry-run Phase 0 bootstrap (re-runs only; first-time hits #52)'
     dir: ansible
     cmds:
       - >-
