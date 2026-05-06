@@ -14,15 +14,13 @@ ansible/
 │   ├── site.yml                 # 全 Phase エントリポイント
 │   ├── network.yml              # Phase 1: systemd-networkd / nftables / dnsmasq
 │   ├── dns.yml                  # Phase 2: Unbound / AdGuard Home
-│   ├── netbird.yml              # Phase 3: Netbird Subnet Router
-│   └── monitoring.yml           # Phase 4: node_exporter
+│   └── netbird.yml              # Phase 3: Netbird Subnet Router
 ├── roles/
 │   ├── bootstrap/               # Phase 0 実装
 │   ├── network/                 # Phase 1 実装
 │   ├── unbound/                 # Phase 2 実装
 │   ├── adguard/                 # Phase 2 実装
-│   ├── netbird/                 # Phase 3 実装
-│   └── node_exporter/           # Phase 4 雛形
+│   └── netbird/                 # Phase 3 実装
 └── vars/
     ├── common.yml
     └── secrets.yml.example      # 実体は ansible-vault で暗号化
