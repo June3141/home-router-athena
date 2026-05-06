@@ -1,0 +1,12 @@
+---
+# Phase 3: Netbird Subnet Router（実装は後続）
+- name: Phase 3 - Netbird Subnet Router
+  hosts: routers
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/common.yml
+    - ../vars/secrets.yml
+  roles:
+    - role: netbird
+      tags: [vpn, netbird]
