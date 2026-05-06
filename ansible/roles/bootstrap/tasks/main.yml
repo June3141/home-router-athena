@@ -1,0 +1,58 @@
+---
+# Phase 0: 初期管理ユーザー / SSH 鍵 / sudo / root SSH 無効化。
+# OS インストール直後の素状態 (root SSH のみ受け付け) から
+# Ansible 本体運用に移行できる足場を整える。
+#
+# 実行例 (root password 入力あり):
+#   ansible-playbook \
+#     -i ansible/inventory/hosts.yml \
+#     -e ansible_user=root --ask-pass \
+#     ansible/playbooks/bootstrap.yml
+#
+# 2 回目以降は通常通り `ansible_user` (= bootstrap_user) で接続される
+# 想定。再実行は冪等。
+
+- name: Assert SSH public key is provided
+  ansible.builtin.assert:
+    that:
+      - bootstrap_ssh_pubkey | length > 0
+    fail_msg: |
+      bootstrap_ssh_pubkey が未設定。host_vars / vars / lookup('file', '...')
+      等で公開鍵を設定すること。空のまま root を切ると、ホストにログイン
+      できなくなる。
+
+- name: Ensure management user exists
+  ansible.builtin.user:
+    name: "{{ bootstrap_user }}"
+    groups: "{{ bootstrap_user_groups }}"
+    append: true
+    shell: "{{ bootstrap_user_shell }}"
+    create_home: true
+    state: present
+
+- name: Deploy SSH public key for management user
+  ansible.posix.authorized_key:
+    user: "{{ bootstrap_user }}"
+    key: "{{ bootstrap_ssh_pubkey }}"
+    state: present
+
+- name: Enable sudo NOPASSWD for management user
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/10-{{ bootstrap_user }}-nopasswd"
+    content: "{{ bootstrap_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"
+
+- name: Disable root SSH login (sshd_config.d drop-in)
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-disable-root-login.conf
+    content: |
+      # Managed by Ansible (bootstrap role)
+      PermitRootLogin no
+    owner: root
+    group: root
+    mode: "0644"
+  when: bootstrap_disable_root_ssh
+  notify: restart sshd

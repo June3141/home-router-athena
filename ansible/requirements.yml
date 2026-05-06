@@ -1,0 +1,8 @@
+---
+# Ansible Galaxy collection requirements.
+# Install: `task setup` (= uv sync + ansible-galaxy collection install -r ansible/requirements.yml)
+
+collections:
+  # ansible.posix.authorized_key (bootstrap role) and other POSIX-specific modules
+  - name: ansible.posix
+    version: ">=1.5.0"

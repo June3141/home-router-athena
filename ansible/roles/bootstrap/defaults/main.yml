@@ -1,0 +1,15 @@
+---
+# bootstrap ロール既定値
+# host_vars / inventory で上書き可
+
+# 作成する管理ユーザー (default は generic な値)
+bootstrap_user: admin
+bootstrap_user_shell: /bin/bash
+bootstrap_user_groups: [sudo]
+
+# 鍵認証への移行が完了したら root の SSH ログインを無効化する
+bootstrap_disable_root_ssh: true
+
+# 管理ユーザーに deploy する SSH 公開鍵 (必須、未設定なら role が
+# 失敗する設計)。host_vars / vault / lookup('file', '...') 等で設定
+bootstrap_ssh_pubkey: ""
