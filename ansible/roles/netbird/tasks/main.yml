@@ -1,0 +1,10 @@
+---
+# TODO: Phase 3 で実装 (issue #4)
+# - 公式 apt repository を追加
+# - netbird パッケージをインストール
+# - netbird up --setup-key={{ netbird_setup_key }} --management-url=...
+#   --advertise-routes=<LAN_CIDR> --accept-routes=false
+# - 冪等性のため netbird status の出力で判定する
+- name: Phase 3 未実装プレースホルダー
+  ansible.builtin.debug:
+    msg: "netbird role はまだ実装されていません"

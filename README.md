@@ -13,13 +13,13 @@ ansible/
 │   ├── site.yml                 # 全 Phase エントリポイント
 │   ├── network.yml              # Phase 1: systemd-networkd / nftables / dnsmasq
 │   ├── dns.yml                  # Phase 2: Unbound / AdGuard Home
-│   ├── tailscale.yml            # Phase 3: Tailscale Subnet Router
+│   ├── netbird.yml              # Phase 3: Netbird Subnet Router
 │   └── monitoring.yml           # Phase 4: node_exporter
 ├── roles/
 │   ├── network/                 # Phase 1 実装
 │   ├── unbound/                 # Phase 2 雛形
 │   ├── adguard/                 # Phase 2 雛形
-│   ├── tailscale/               # Phase 3 雛形
+│   ├── netbird/                 # Phase 3 雛形
 │   └── node_exporter/           # Phase 4 雛形
 └── vars/
     ├── common.yml
