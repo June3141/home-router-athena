@@ -1,10 +1,4 @@
 ---
-- name: Restart netbird
-  ansible.builtin.systemd:
-    name: netbird
-    state: restarted
-  listen: restart netbird
-
 - name: Install Netbird keyring (dearmor)
   ansible.builtin.command:
     cmd: gpg --dearmor --yes --output {{ netbird_apt_keyring_path }} /tmp/netbird-archive-key.asc
