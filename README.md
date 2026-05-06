@@ -17,9 +17,9 @@ ansible/
 │   └── monitoring.yml           # Phase 4: node_exporter
 ├── roles/
 │   ├── network/                 # Phase 1 実装
-│   ├── unbound/                 # Phase 2 雛形
-│   ├── adguard/                 # Phase 2 雛形
-│   ├── netbird/                 # Phase 3 雛形
+│   ├── unbound/                 # Phase 2 実装
+│   ├── adguard/                 # Phase 2 実装
+│   ├── netbird/                 # Phase 3 実装
 │   └── node_exporter/           # Phase 4 雛形
 └── vars/
     ├── common.yml
@@ -41,15 +41,20 @@ $EDITOR ansible/host_vars/athena-lab.yml
 # inventory/hosts.yml には構造（どのグループにどのホストがいるか）だけが入る
 
 # 2. secrets を作成（Phase 3 以降で必要）
+#    Phase 3 では netbird_setup_key が必要。Netbird coordination
+#    server (Cloud or self-hosted) の管理画面で setup key を発行し、
+#    secrets.yml に書き込んでから vault 暗号化する。
+#    self-host する場合は host_vars 等で netbird_management_url も上書き。
 cp ansible/vars/secrets.yml.example ansible/vars/secrets.yml
+$EDITOR ansible/vars/secrets.yml
 ansible-vault encrypt ansible/vars/secrets.yml
 
 # 3. 疎通確認
 cd ansible
 ansible routers -m ping
 
-# 4. Phase 1 適用
-ansible-playbook playbooks/network.yml
+# 4. 全 Phase 適用（site.yml = network → dns → netbird の順）
+ansible-playbook playbooks/site.yml --ask-vault-pass
 ```
 
 ## ローカルチェック
@@ -87,14 +92,18 @@ push / PR 時は `.github/workflows/check.yml` が同じ `task check` を回す�
 ## 実行例
 
 ```sh
-# 全 Phase（site.yml が import_playbook している範囲）
-ansible-playbook playbooks/site.yml
+# 全 Phase (site.yml が import_playbook している範囲)
+# Phase 3 が含まれるので vault password 入力が必要
+ansible-playbook playbooks/site.yml --ask-vault-pass
 
-# Phase 1 のみ
-ansible-playbook playbooks/network.yml
+# Phase 単位
+ansible-playbook playbooks/network.yml                          # Phase 1
+ansible-playbook playbooks/dns.yml                              # Phase 2
+ansible-playbook playbooks/netbird.yml --ask-vault-pass         # Phase 3
 
 # 特定タグだけ
 ansible-playbook playbooks/network.yml --tags nftables
+ansible-playbook playbooks/dns.yml --tags adguard
 ```
 
 ## 注意
@@ -102,5 +111,10 @@ ansible-playbook playbooks/network.yml --tags nftables
 - `network` ロールは systemd-networkd / nftables / dnsmasq を有効化する。
   既存の NetworkManager や ifupdown を使っている機体ではセッションが切れる可能性があるため、
   リモート機への適用前にコンソールアクセス手段を確保しておくこと。
+- **Phase 3 (Netbird) の前提**: coordination server (Netbird Cloud or
+  self-hosted) が稼働済みで、router 用の setup key が発行されていること。
+  setup key は vault 暗号化した `vars/secrets.yml` に `netbird_setup_key:`
+  として置く。self-host なら `host_vars/<host>.yml` で
+  `netbird_management_url` も上書き。
 - MAP-E 設定（andline / JPNE v6プラス）は本番環境向けで未実装。
 - Phase 完了時点でタグを打つ運用 (`git tag phase-1` 等)。
