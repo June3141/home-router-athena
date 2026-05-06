@@ -7,3 +7,10 @@ collections:
   # 動作確認済みのバージョンに pin し、更新は別 PR で。
   - name: ansible.posix
     version: "2.1.0"
+
+  # 汎用ユーティリティ collection (htpasswd / ini_file / archive 等多数)。
+  # role 内で個別に使う想定、現時点では bootstrap には不要だが将来用に
+  # available にしておく。stdout_callback "yaml" は v12.0.0 で廃止 →
+  # ansible.builtin.default の result_format=yaml を ansible.cfg で使う。
+  - name: community.general
+    version: "12.6.0"
