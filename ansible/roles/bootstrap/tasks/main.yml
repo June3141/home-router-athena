@@ -35,6 +35,12 @@
     user: "{{ bootstrap_user }}"
     key: "{{ bootstrap_ssh_pubkey }}"
     state: present
+    # Explicit path so --check works on a fresh host: in check mode the
+    # preceding `user` task only pretends to create the account, so without
+    # `path:` ansible.posix.authorized_key fails its home-directory lookup
+    # ("Either user must exist or you must provide full path to key file in
+    # check mode"). See #52.
+    path: "/home/{{ bootstrap_user }}/.ssh/authorized_keys"
 
 - name: Enable sudo NOPASSWD for management user
   ansible.builtin.copy:
