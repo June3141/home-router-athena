@@ -35,13 +35,6 @@
 - name: Run pending handlers — install keyring before adding the repo
   ansible.builtin.meta: flush_handlers
 
-- name: Set keyring permissions
-  ansible.builtin.file:
-    path: "{{ netbird_apt_keyring_path }}"
-    owner: root
-    group: root
-    mode: "0644"
-
 - name: Configure Netbird apt source
   ansible.builtin.copy:
     dest: /etc/apt/sources.list.d/netbird.list
