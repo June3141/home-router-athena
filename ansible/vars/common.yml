@@ -13,10 +13,12 @@ network_lan_dhcp_lease_time: 12h
 # IPv6 forwarding（本番環境で MAP-E を使う際に true）
 network_ipv6_forwarding: false
 
-# nftables: SSH 許可元 CIDR (RFC1918 + Netbird CGNAT)。
+# nftables: SSH 許可元 CIDR (RFC1918 既定)。
 # 管理 IP が固定ならさらに絞ること。
+# Netbird 経由の SSH を許可する場合は host_vars で 100.64.0.0/10 を追加。
+# ただし WAN が CGNAT (RFC6598) の環境では default に含めると WAN 側 SSH が
+# 露出するおそれあり、必ず host_vars で明示的に追加する運用にすること。
 network_ssh_allowed_sources:
   - 10.0.0.0/8
   - 172.16.0.0/12
   - 192.168.0.0/16
-  - 100.64.0.0/10  # Netbird CGNAT
