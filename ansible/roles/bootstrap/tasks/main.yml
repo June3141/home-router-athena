@@ -27,6 +27,7 @@
     groups: "{{ bootstrap_user_groups }}"
     append: true
     shell: "{{ bootstrap_user_shell }}"
+    home: "{{ bootstrap_user_home }}"
     create_home: true
     state: present
 
@@ -35,6 +36,13 @@
     user: "{{ bootstrap_user }}"
     key: "{{ bootstrap_ssh_pubkey }}"
     state: present
+    # Explicit path so --check works on a fresh host: in check mode the
+    # preceding `user` task only pretends to create the account, so without
+    # `path:` ansible.posix.authorized_key fails its home-directory lookup
+    # ("Either user must exist or you must provide full path to key file in
+    # check mode"). Both this task and the `user` task above derive the path
+    # from `bootstrap_user_home` so a non-default home stays consistent. (#52)
+    path: "{{ bootstrap_user_home }}/.ssh/authorized_keys"
 
 - name: Enable sudo NOPASSWD for management user
   ansible.builtin.copy:

@@ -6,6 +6,11 @@
 bootstrap_user: admin
 bootstrap_user_shell: /bin/bash
 bootstrap_user_groups: [sudo]
+# Home directory. `user` と `authorized_key` 両タスクが同じ値を参照する
+# ことで、Debian 既定 (/home/<user>) と非標準 (例 /var/lib/<user>) の
+# どちらでも整合し、かつ --check 時の home-directory lookup 失敗を
+# 回避する (#52)。
+bootstrap_user_home: "/home/{{ bootstrap_user }}"
 
 # 鍵認証への移行が完了したら root の SSH ログインを無効化する
 bootstrap_disable_root_ssh: true
