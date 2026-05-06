@@ -7,6 +7,10 @@
   ansible.builtin.import_tasks: systemd-networkd.yml
   tags: [network, systemd-networkd]
 
+- name: Configure MAP-E tunnel (RFC 7597) when enabled
+  ansible.builtin.import_tasks: mape.yml
+  tags: [network, systemd-networkd, mape]
+
 - name: Configure nftables NAT and firewall
   ansible.builtin.import_tasks: nftables.yml
   tags: [network, nftables]

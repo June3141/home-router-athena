@@ -23,3 +23,30 @@ network_ipv6_forwarding: false
 
 network_ssh_allowed_sources:
   - 0.0.0.0/0
+
+# --- MAP-E (RFC 7597) ----------------------------------------------------
+# JPNE v6プラス 等の IPv4-over-IPv6 transit を喋る場合に有効化する。
+# Disabled by default; #20 はトンネル interface のみ、port-set 制限つき
+# masquerade は #21、本番投入は #22。
+network_mape_enabled: false
+
+# Customer's delegated IPv6 prefix (例: JPNE が割り振る /56)。
+# host_vars / vault に置いて mape_compute filter の入力にする。
+network_mape_customer_v6_prefix: ""
+
+# JPNE-style mapping rule。mape_compute filter の rule 引数と同形。
+# host_vars で具体値に上書きする想定。例:
+#   network_mape_rule:
+#     br_address:            "2404:9200:225:100::64"
+#     rule_v6_prefix:        "2400:4150:40c0::"
+#     rule_v6_prefix_length: 38
+#     rule_v4_prefix:        "111.111.0.0"
+#     rule_v4_prefix_length: 16
+#     ea_length:             24
+#     psid_offset:           6
+network_mape_rule: {}
+
+# Tunnel interface name + MTU。MAP-E は IPv6 ヘッダ 40 byte を被るので
+# WAN MTU 1500 → 1460 が標準。
+network_mape_tunnel_interface: mape0
+network_mape_mtu: 1460

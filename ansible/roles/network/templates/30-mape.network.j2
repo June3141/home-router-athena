@@ -1,0 +1,12 @@
+# Managed by Ansible (network role / MAP-E)
+# CE IPv4 を tunnel に bind し、IPv4 default route を tunnel に向ける。
+# 上りパケットは ip6tnl で BR まで運ばれ、BR が IPv4 transit に decap する。
+
+[Match]
+Name={{ network_mape_tunnel_interface }}
+
+[Network]
+Address={{ network_mape_computed.ce_ipv4 }}/32
+LinkLocalAddressing=no
+IPv6AcceptRA=no
+DefaultRouteOnDevice=yes

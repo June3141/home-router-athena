@@ -1,0 +1,61 @@
+---
+# MAP-E (RFC 7597) tunnel interface configuration via systemd-networkd.
+# 範囲は #20 (ip6tnl の .netdev / .network 生成) のみ。port-set 制限つき
+# masquerade は #21、本番値での総合検証は #22。
+#
+# network_mape_enabled が false の場合はトンネル系ファイルを deploy せず、
+# 既に置いてあれば取り除く (= MAP-E をオフに切り戻す動線も維持する)。
+
+- name: Validate MAP-E inputs when enabled
+  ansible.builtin.assert:
+    that:
+      - network_mape_customer_v6_prefix | length > 0
+      - network_mape_rule | length > 0
+      - network_mape_rule.br_address is defined
+      - network_mape_rule.rule_v6_prefix is defined
+      - network_mape_rule.rule_v6_prefix_length is defined
+      - network_mape_rule.rule_v4_prefix is defined
+      - network_mape_rule.rule_v4_prefix_length is defined
+      - network_mape_rule.ea_length is defined
+    fail_msg: |
+      network_mape_enabled=true だが network_mape_customer_v6_prefix /
+      network_mape_rule の必須キーが揃っていない。host_vars / vault で
+      設定すること。
+  when: network_mape_enabled
+
+- name: Compute MAP-E CE / PSID parameters
+  ansible.builtin.set_fact:
+    network_mape_computed: "{{ network_mape_customer_v6_prefix | mape_compute(network_mape_rule) }}"
+  when: network_mape_enabled
+
+- name: Render MAP-E tunnel .netdev
+  ansible.builtin.template:
+    src: 30-mape.netdev.j2
+    dest: "/etc/systemd/network/30-{{ network_mape_tunnel_interface }}.netdev"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart systemd-networkd
+  when: network_mape_enabled
+
+- name: Render MAP-E tunnel .network
+  ansible.builtin.template:
+    src: 30-mape.network.j2
+    dest: "/etc/systemd/network/30-{{ network_mape_tunnel_interface }}.network"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart systemd-networkd
+  when: network_mape_enabled
+
+# Disable パスでも既存 unit を掃除する。MAP-E を一時オフにした際に
+# tunnel が残ってトラフィックが意図せず吸われ続ける事故を防ぐ。
+- name: Remove MAP-E tunnel files when disabled
+  ansible.builtin.file:
+    path: "/etc/systemd/network/30-{{ network_mape_tunnel_interface }}.{{ item }}"
+    state: absent
+  loop:
+    - netdev
+    - network
+  notify: restart systemd-networkd
+  when: not network_mape_enabled
