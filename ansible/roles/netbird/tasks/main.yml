@@ -69,16 +69,22 @@
   # netbird daemon が unregistered (rc != 0) または "NeedsLogin" 表示の
   # ときだけ実行。登録後の設定 drift (advertise-routes 変更等) は手動
   # 再実行で対応する方針。
+  #
+  # setup key は argv ではなく `NB_SETUP_KEY` 環境変数経由で渡す。
+  # argv だと `ps` / `/proc/<pid>/cmdline` / 監査ログに値が露出するが、
+  # env var なら `/proc/<pid>/environ` (root or 同一 uid 限定) で済む。
+  # NB_SETUP_KEY は Netbird 公式サポート、--setup-key と同じ意味。
   ansible.builtin.command:
     cmd: >-
       netbird up
-      --setup-key={{ netbird_setup_key }}
       --management-url={{ netbird_management_url }}
       --hostname={{ netbird_hostname }}
       --advertise-routes={{ netbird_advertise_routes }}
       --accept-routes={{ netbird_accept_routes | string | lower }}
+  environment:
+    NB_SETUP_KEY: "{{ netbird_setup_key }}"
   when: >-
     netbird_status_cmd.rc != 0
     or 'NeedsLogin' in (netbird_status_cmd.stdout | default(''))
-  no_log: true                # setup-key をログに残さない
+  no_log: true
   changed_when: true
