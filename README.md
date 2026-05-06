@@ -116,5 +116,5 @@ ansible-playbook playbooks/dns.yml --tags adguard
   setup key は vault 暗号化した `vars/secrets.yml` に `netbird_setup_key:`
   として置く。self-host なら `host_vars/<host>.yml` で
   `netbird_management_url` も上書き。
-- MAP-E 設定（andline / JPNE v6プラス）は本番環境向けで未実装。
+- MAP-E 設定（JPNE v6プラス）は本番環境向けで未実装。
 - Phase 完了時点でタグを打つ運用 (`git tag phase-1` 等)。
