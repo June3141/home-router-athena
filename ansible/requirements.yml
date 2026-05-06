@@ -3,6 +3,7 @@
 # Install: `task setup` (= uv sync + ansible-galaxy collection install -r ansible/requirements.yml)
 
 collections:
-  # ansible.posix.authorized_key (bootstrap role) and other POSIX-specific modules
+  # ansible.posix.authorized_key (bootstrap role) and other POSIX-specific modules.
+  # 動作確認済みのバージョンに pin し、更新は別 PR で。
   - name: ansible.posix
-    version: ">=1.5.0"
+    version: "2.1.0"
