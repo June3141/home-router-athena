@@ -31,6 +31,9 @@ jobs:
       - name: Install Python dev tools (uv-managed venv)
         run: uv sync --frozen
 
+      - name: Install Ansible Galaxy collections
+        run: uv run ansible-galaxy collection install -r ansible/requirements.yml
+
       - name: Install Betterleaks
         env:
           BETTERLEAKS_VERSION: "1.1.2"

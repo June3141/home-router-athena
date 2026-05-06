@@ -1,0 +1,22 @@
+---
+# Phase 0: bootstrap.
+# OS インストール直後 (root SSH のみ受付) から Ansible 本体運用へ
+# 移行するための足場。
+#
+# 実行例 (root password 入力あり、1 回目のみ):
+#   ansible-playbook \
+#     -i ansible/inventory/hosts.yml \
+#     -e ansible_user=root --ask-pass \
+#     ansible/playbooks/bootstrap.yml
+#
+# 2 回目以降は通常通り `ansible_user` (= bootstrap_user) で接続される
+# 想定。再実行は冪等。site.yml には組み込まない (Phase 0 は手動 1 回)。
+- name: Phase 0 - Bootstrap management user
+  hosts: routers
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../vars/common.yml
+  roles:
+    - role: bootstrap
+      tags: [bootstrap]
