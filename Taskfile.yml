@@ -90,3 +90,9 @@ tasks:
     dir: ansible
     cmds:
       - uv run ansible-playbook -i inventory/hosts.yml --ask-vault-pass --check playbooks/site.yml
+
+  test:mape:
+    desc: 'Run MAP-E filter unit tests (RFC 7597 vectors, hardware-free)'
+    dir: ansible
+    cmds:
+      - uv run ansible-playbook -i 'localhost,' -c local playbooks/test_mape.yml

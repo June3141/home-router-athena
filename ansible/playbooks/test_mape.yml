@@ -1,0 +1,81 @@
+---
+# Unit tests for the mape_compute filter plugin (issue #19).
+#
+# Run via:
+#   task test:mape
+# or directly:
+#   uv run ansible-playbook -i localhost, -c local playbooks/test_mape.yml
+#
+# All cases are deterministic / hardware-independent. Test vectors are taken
+# from RFC 7597 §6 plus synthetic checks for PSID-offset port-set semantics.
+
+- name: MAP-E filter unit tests
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: RFC 7597 §6 example (a=0, full mapping)
+      vars:
+        rule:
+          br_address: "2001:db8:ffff::1"
+          rule_v6_prefix: "2001:db8::"
+          rule_v6_prefix_length: 40
+          rule_v4_prefix: "192.0.2.0"
+          rule_v4_prefix_length: 24
+          ea_length: 16
+          psid_offset: 0
+        result: "{{ '2001:db8:0012:3400::/56' | mape_compute(rule) }}"
+      ansible.builtin.assert:
+        that:
+          - result.ce_ipv4 == "192.0.2.18"
+          - result.psid == 52
+          - result.ce_ipv6 == "2001:db8:12:3400:0:c000:212:34"
+          - result.br_address == "2001:db8:ffff::1"
+          # a=0, single block of 256 contiguous ports starting at psid * 256
+          - result.port_ranges | length == 1
+          - result.port_ranges[0] == [13312, 13567]
+
+    - name: JPNE-style PSID offset 6 (well-known ports excluded)
+      vars:
+        rule:
+          br_address: "2001:db8:ffff::1"
+          rule_v6_prefix: "2001:db8::"
+          rule_v6_prefix_length: 40
+          rule_v4_prefix: "192.0.2.0"
+          rule_v4_prefix_length: 24
+          ea_length: 16
+          psid_offset: 6
+        result: "{{ '2001:db8:0012:3400::/56' | mape_compute(rule) }}"
+      ansible.builtin.assert:
+        that:
+          # CE IPv4 / PSID / CE IPv6 are independent of psid_offset
+          - result.ce_ipv4 == "192.0.2.18"
+          - result.psid == 52
+          # a=6 -> 64 m values, m=0 excluded -> 63 blocks of 4 ports each
+          - result.port_ranges | length == 63
+          # First block: m=1, base = (1 << 10) | (52 << 2) = 1024 | 208 = 1232
+          - result.port_ranges[0] == [1232, 1235]
+          # All blocks above well-known port range
+          - result.port_ranges[0][0] >= 1024
+
+    - name: Shared IPv4 (rule_v4_prefix_length = 32, q = 0)
+      vars:
+        rule:
+          br_address: "2001:db8:ffff::1"
+          rule_v6_prefix: "2001:db8:1::"
+          rule_v6_prefix_length: 48
+          rule_v4_prefix: "203.0.113.7"
+          rule_v4_prefix_length: 32
+          ea_length: 8
+          psid_offset: 6
+        # customer prefix: bits [48, 56) = 0xab.
+        # The 4th hextet "ab00" places 0xab in the high byte (bits 48-55).
+        result: "{{ '2001:db8:1:ab00::/56' | mape_compute(rule) }}"
+      ansible.builtin.assert:
+        that:
+          # No IPv4 suffix - all CEs share the same IPv4 address
+          - result.ce_ipv4 == "203.0.113.7"
+          # EA-bits = 0xab, no IPv4 suffix => entire EA is PSID
+          - result.psid == 171
+          # a=6, k=8 -> 63 blocks of 4 ports (m=0 excluded)
+          - result.port_ranges | length == 63
+          - result.port_ranges[0][1] - result.port_ranges[0][0] == 3
