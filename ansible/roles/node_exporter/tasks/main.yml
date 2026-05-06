@@ -1,8 +1,0 @@
----
-# TODO: Phase 4 で実装
-# - prometheus-node-exporter パッケージのインストール（または公式バイナリ配置）
-# - systemd 起動・有効化
-# - nftables で metrics ポート (9100/tcp) を必要範囲に開放
-- name: Phase 4 未実装プレースホルダー
-  ansible.builtin.debug:
-    msg: "node_exporter role はまだ実装されていません"
