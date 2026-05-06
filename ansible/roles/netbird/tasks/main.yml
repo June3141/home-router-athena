@@ -1,10 +1,90 @@
 ---
-# TODO: Phase 3 で実装 (issue #4)
-# - 公式 apt repository を追加
-# - netbird パッケージをインストール
-# - netbird up --setup-key={{ netbird_setup_key }} --management-url=...
-#   --advertise-routes=<LAN_CIDR> --accept-routes=false
-# - 冪等性のため netbird status の出力で判定する
-- name: Phase 3 未実装プレースホルダー
-  ansible.builtin.debug:
-    msg: "netbird role はまだ実装されていません"
+# Phase 3: Netbird subnet router agent.
+# 公式 install スクリプト (https://pkgs.netbird.io/install.sh) と同じ形で
+# apt repository をセットアップし、netbird daemon を install。
+# `netbird up` で coordination server に登録、LAN セグメントを advertise。
+#
+# 既に登録済みなら `netbird up` を再実行しない (idempotent)。
+# 登録後の advertise-routes 変更は手動で `netbird up` を再実行する想定。
+
+- name: Ensure prerequisites for apt repo signing are installed
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ensure keyring directory exists
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Fetch Netbird signing key
+  ansible.builtin.get_url:
+    url: "{{ netbird_apt_key_url }}"
+    dest: /tmp/netbird-archive-key.asc
+    mode: "0644"
+  notify: install netbird keyring
+
+- name: Run pending handlers — install keyring before adding the repo
+  ansible.builtin.meta: flush_handlers
+
+- name: Configure Netbird apt source
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/netbird.list
+    content: "{{ netbird_apt_repo }}\n"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: refresh apt cache
+
+- name: Run pending handlers — refresh apt cache before installing the package
+  ansible.builtin.meta: flush_handlers
+
+- name: Install netbird package
+  ansible.builtin.apt:
+    name: netbird
+    state: present
+
+- name: Ensure netbird systemd service is enabled and active
+  ansible.builtin.systemd:
+    name: netbird
+    enabled: true
+    state: started
+
+- name: Read Netbird daemon status
+  ansible.builtin.command:
+    cmd: netbird status
+  register: netbird_status_cmd
+  changed_when: false
+  failed_when: false
+
+- name: Register Netbird agent and advertise the LAN
+  # netbird daemon が unregistered (rc != 0) または "NeedsLogin" 表示の
+  # ときだけ実行。登録後の設定 drift (advertise-routes 変更等) は手動
+  # 再実行で対応する方針。
+  #
+  # setup key は argv ではなく `NB_SETUP_KEY` 環境変数経由で渡す。
+  # argv だと `ps` / `/proc/<pid>/cmdline` / 監査ログに値が露出するが、
+  # env var なら `/proc/<pid>/environ` (root or 同一 uid 限定) で済む。
+  # NB_SETUP_KEY は Netbird 公式サポート、--setup-key と同じ意味。
+  ansible.builtin.command:
+    cmd: >-
+      netbird up
+      --management-url={{ netbird_management_url }}
+      --hostname={{ netbird_hostname }}
+      --advertise-routes={{ netbird_advertise_routes }}
+      --accept-routes={{ netbird_accept_routes | string | lower }}
+  environment:
+    NB_SETUP_KEY: "{{ netbird_setup_key }}"
+  when: >-
+    netbird_status_cmd.rc != 0
+    or 'NeedsLogin' in (netbird_status_cmd.stdout | default(''))
+  no_log: true
+  changed_when: true

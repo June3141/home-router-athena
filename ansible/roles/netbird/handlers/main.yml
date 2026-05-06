@@ -1,0 +1,23 @@
+---
+- name: Install Netbird keyring (dearmor)
+  ansible.builtin.command:
+    cmd: gpg --dearmor --yes --output {{ netbird_apt_keyring_path }} /tmp/netbird-archive-key.asc
+  changed_when: true
+  listen: install netbird keyring
+
+- name: Set Netbird keyring file mode
+  # state: file = "must already exist" にして、誤って空ファイルを
+  # 作って apt の署名検証を壊さないようにする。dearmor 後に必ず
+  # 走るので chain 内で実行。
+  ansible.builtin.file:
+    path: "{{ netbird_apt_keyring_path }}"
+    state: file
+    owner: root
+    group: root
+    mode: "0644"
+  listen: install netbird keyring
+
+- name: Refresh apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  listen: refresh apt cache
