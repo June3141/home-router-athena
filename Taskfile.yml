@@ -10,9 +10,10 @@ tasks:
       - task --list
 
   setup:
-    desc: Install Python dev tools into the project virtualenv (uv-managed)
+    desc: Install Python dev tools (uv) and Ansible Galaxy collections
     cmds:
       - uv sync
+      - uv run ansible-galaxy collection install -r ansible/requirements.yml
 
   check:
     desc: Run all checks (lint + secret scan); used by CI and pre-commit

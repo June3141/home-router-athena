@@ -10,17 +10,17 @@ ansible/
 ├── ansible.cfg
 ├── inventory/hosts.yml          # 実験機の接続情報
 ├── playbooks/
+│   ├── bootstrap.yml            # Phase 0: 初期 user / SSH 鍵 / sudo (1 回のみ手動)
 │   ├── site.yml                 # 全 Phase エントリポイント
 │   ├── network.yml              # Phase 1: systemd-networkd / nftables / dnsmasq
 │   ├── dns.yml                  # Phase 2: Unbound / AdGuard Home
-│   ├── netbird.yml              # Phase 3: Netbird Subnet Router
-│   └── monitoring.yml           # Phase 4: node_exporter
+│   └── netbird.yml              # Phase 3: Netbird Subnet Router
 ├── roles/
+│   ├── bootstrap/               # Phase 0 実装
 │   ├── network/                 # Phase 1 実装
 │   ├── unbound/                 # Phase 2 実装
 │   ├── adguard/                 # Phase 2 実装
-│   ├── netbird/                 # Phase 3 実装
-│   └── node_exporter/           # Phase 4 雛形
+│   └── netbird/                 # Phase 3 実装
 └── vars/
     ├── common.yml
     └── secrets.yml.example      # 実体は ansible-vault で暗号化
@@ -35,7 +35,7 @@ ansible/
 ## セットアップ
 
 ```sh
-# 1. ホスト固有の値（IP / SSH ユーザー / NIC 名 / LAN セグメント）を設定
+# 1. ホスト固有の値（IP / SSH ユーザー / NIC 名 / LAN セグメント / 公開鍵）を設定
 cp ansible/host_vars/athena-lab.yml.example ansible/host_vars/athena-lab.yml
 $EDITOR ansible/host_vars/athena-lab.yml
 # inventory/hosts.yml には構造（どのグループにどのホストがいるか）だけが入る
@@ -49,11 +49,19 @@ cp ansible/vars/secrets.yml.example ansible/vars/secrets.yml
 $EDITOR ansible/vars/secrets.yml
 ansible-vault encrypt ansible/vars/secrets.yml
 
-# 3. 疎通確認
+# 3. (新規ホストのみ 1 回) Phase 0 bootstrap
+#    OS インストール直後の root SSH (password) から、管理ユーザー /
+#    鍵 / sudo を整備する。完了後 root SSH ログインは自動で無効化される。
+ansible-playbook \
+  -i ansible/inventory/hosts.yml \
+  -e ansible_user=root --ask-pass \
+  ansible/playbooks/bootstrap.yml
+
+# 4. 疎通確認 (Phase 0 で作った管理ユーザー経由)
 cd ansible
 ansible routers -m ping
 
-# 4. 全 Phase 適用（site.yml = network → dns → netbird の順）
+# 5. 全 Phase 適用（site.yml = network → dns → netbird の順）
 ansible-playbook playbooks/site.yml --ask-vault-pass
 ```
 
@@ -108,6 +116,10 @@ ansible-playbook playbooks/dns.yml --tags adguard
 
 ## 注意
 
+- **Phase 0 (bootstrap) は新規 OS 直後の 1 回のみ**実行する想定。完了時点で
+  root の SSH ログインが無効化されるので、再実行時は管理ユーザーで接続する。
+  bootstrap_ssh_pubkey が誤った鍵だとロックアウトするので、適用前にコンソール
+  アクセス手段を確保すること。
 - `network` ロールは systemd-networkd / nftables / dnsmasq を有効化する。
   既存の NetworkManager や ifupdown を使っている機体ではセッションが切れる可能性があるため、
   リモート機への適用前にコンソールアクセス手段を確保しておくこと。
