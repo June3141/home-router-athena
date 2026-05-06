@@ -1,0 +1,14 @@
+# Managed by Ansible (network role / MAP-E)
+# RFC 7597 §5: IPv4-over-IPv6 tunnel between CE and BR.
+# Local = CE IPv6 (computed from customer prefix), Remote = BR IPv6 (rule).
+
+[NetDev]
+Name={{ network_mape_tunnel_interface }}
+Kind=ip6tnl
+MTUBytes={{ network_mape_mtu }}
+
+[Tunnel]
+Mode=ipip6
+Local={{ network_mape_computed.ce_ipv6 }}
+Remote={{ network_mape_computed.br_address }}
+EncapsulationLimit=4

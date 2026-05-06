@@ -32,3 +32,19 @@ network_lan_dhcp_range_end: 192.168.10.200
 # false なら dnsmasq は port=0 で DNS を停止し、LAN:53 は AdGuard が
 # 受け持つ。Phase 1 単独で運用するなら true のまま (デフォルトと同じ)。
 network_dnsmasq_dns_enabled: false
+
+# --- MAP-E (RFC 7597) ---------------------------------------------------
+# JPNE v6プラス 等の IPv4-over-IPv6 transit を喋る場合のみ有効化する。
+# Disabled のうちは tunnel interface も立たないので Phase 1 単体運用に
+# 副作用は無い。本番値 (実 ISP の rule + 自局 customer prefix) は vault
+# 管理する想定。
+# network_mape_enabled: true
+# network_mape_customer_v6_prefix: "2400:4150:40c0:1234::/56"
+# network_mape_rule:
+#   br_address:            "2404:9200:225:100::64"
+#   rule_v6_prefix:        "2400:4150:40c0::"
+#   rule_v6_prefix_length: 38
+#   rule_v4_prefix:        "111.111.0.0"
+#   rule_v4_prefix_length: 16
+#   ea_length:             24
+#   psid_offset:           6
