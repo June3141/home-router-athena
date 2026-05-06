@@ -1,0 +1,24 @@
+---
+# netbird ロール既定値
+# inventory / host_vars で上書き可
+
+# coordination server URL (Netbird Cloud のデフォルト)
+# self-host する場合は host_vars 等で override
+netbird_management_url: https://api.netbird.io:443
+
+# subnet router として export する CIDR (default: 自ホストの LAN セグメント)
+netbird_advertise_routes: "{{ network_lan_address }}"
+
+# Netbird 上の peer 識別名
+netbird_hostname: "{{ inventory_hostname }}"
+
+# 他 peer から伝搬される route を install しない
+# (この router は subnet provider 専用、他人の LAN にぶら下がらない)
+netbird_accept_routes: false
+
+# Debian apt repository
+netbird_apt_key_url: https://pkgs.netbird.io/debian/public.key
+netbird_apt_keyring_path: /usr/share/keyrings/netbird-archive-keyring.gpg
+netbird_apt_repo: >-
+  deb [signed-by={{ netbird_apt_keyring_path }}]
+  https://pkgs.netbird.io/debian stable main
