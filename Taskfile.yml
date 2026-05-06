@@ -90,3 +90,9 @@ tasks:
     dir: ansible
     cmds:
       - uv run ansible-playbook -i 'localhost,' -c local playbooks/test_mape.yml
+
+  test:mape:render:
+    desc: 'Render MAP-E systemd-networkd templates and assert on output'
+    dir: ansible
+    cmds:
+      - uv run ansible-playbook -i 'localhost,' -c local playbooks/test_mape_render.yml

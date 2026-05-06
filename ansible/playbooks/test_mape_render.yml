@@ -1,0 +1,99 @@
+---
+# Smoke render of the MAP-E systemd-networkd templates (issue #20).
+# Hardware-free: writes to /tmp on the controller and asserts on output.
+#
+# Run via:
+#   task test:mape:render
+# or directly:
+#   uv run ansible-playbook -i 'localhost,' -c local playbooks/test_mape_render.yml
+#
+# Coverage:
+#   * `network_mape_enabled=true` path renders both .netdev and .network with
+#     the values from `mape_compute`.
+#   * `network_mape_enabled=false` path leaves the role's MAP-E variables
+#     untouched and produces no output (the disable branch is exercised by
+#     the role's `file: state=absent` task at deploy time, not during render).
+
+- name: MAP-E template render smoke test
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Match the example in defaults/main.yml and host_vars example. Values
+    # are RFC 7597 §6 reference vector so expectations are easy to read.
+    network_mape_enabled: true
+    network_mape_customer_v6_prefix: "2001:db8:0012:3400::/56"
+    network_mape_rule:
+      br_address: "2001:db8:ffff::1"
+      rule_v6_prefix: "2001:db8::"
+      rule_v6_prefix_length: 40
+      rule_v4_prefix: "192.0.2.0"
+      rule_v4_prefix_length: 24
+      ea_length: 16
+      psid_offset: 0
+    network_mape_tunnel_interface: mape0
+    network_mape_mtu: 1460
+    _render_dir: /tmp/mape-render-test
+  tasks:
+    - name: Compute MAP-E parameters
+      ansible.builtin.set_fact:
+        network_mape_computed: "{{ network_mape_customer_v6_prefix | mape_compute(network_mape_rule) }}"
+
+    - name: Ensure render directory is clean
+      ansible.builtin.file:
+        path: "{{ _render_dir }}"
+        state: "{{ item }}"
+        mode: "0755"
+      loop:
+        - absent
+        - directory
+
+    - name: Render .netdev template
+      ansible.builtin.template:
+        src: ../roles/network/templates/30-mape.netdev.j2
+        dest: "{{ _render_dir }}/30-mape0.netdev"
+        mode: "0644"
+
+    - name: Render .network template
+      ansible.builtin.template:
+        src: ../roles/network/templates/30-mape.network.j2
+        dest: "{{ _render_dir }}/30-mape0.network"
+        mode: "0644"
+
+    - name: Read rendered .netdev
+      ansible.builtin.slurp:
+        src: "{{ _render_dir }}/30-mape0.netdev"
+      register: _netdev
+
+    - name: Read rendered .network
+      ansible.builtin.slurp:
+        src: "{{ _render_dir }}/30-mape0.network"
+      register: _network
+
+    - name: Assert .netdev contents
+      vars:
+        body: "{{ _netdev.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - "'Name=mape0' in body"
+          - "'Kind=ip6tnl' in body"
+          - "'MTUBytes=1460' in body"
+          - "'Mode=ipip6' in body"
+          - "'Local=2001:db8:12:3400:0:c000:212:34' in body"
+          - "'Remote=2001:db8:ffff::1' in body"
+          - "'EncapsulationLimit=4' in body"
+
+    - name: Assert .network contents
+      vars:
+        body: "{{ _network.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - "'Name=mape0' in body"
+          - "'Address=192.0.2.18/32' in body"
+          - "'DefaultRouteOnDevice=yes' in body"
+          - "'IPv6AcceptRA=no' in body"
+          - "'LinkLocalAddressing=no' in body"
+
+    - name: Clean up render directory
+      ansible.builtin.file:
+        path: "{{ _render_dir }}"
+        state: absent
