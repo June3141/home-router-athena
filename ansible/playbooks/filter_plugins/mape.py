@@ -71,6 +71,37 @@ def mape_compute(customer_v6_prefix: str, rule: dict) -> dict:
     ea_length = int(rule["ea_length"])
     psid_offset = int(rule.get("psid_offset", 0))
 
+    # The CE IPv6 (BMR) layout reserves [64, 128) for the interface ID, so EA-bits
+    # at [rule_v6_len, rule_v6_len + ea_length) must end on or before bit 64. If
+    # they spill into [64, ...), the IID overwrite below silently wipes them and
+    # produces a wrong ce_ipv6 — so fail loudly instead.
+    if rule_v6_len + ea_length > 64:
+        raise ValueError(
+            f"rule_v6_prefix_length ({rule_v6_len}) + ea_length ({ea_length}) "
+            f"must be <= 64; EA-bits would overlap the interface-ID region"
+        )
+
+    # The customer prefix must actually contain the EA-bit window; otherwise the
+    # bit-window read returns the zero-fill below the prefix and silently yields
+    # the wrong CE.
+    if customer_net.prefixlen < rule_v6_len + ea_length:
+        raise ValueError(
+            f"customer prefix length /{customer_net.prefixlen} is shorter than "
+            f"rule_v6_prefix_length ({rule_v6_len}) + ea_length ({ea_length}); "
+            f"cannot extract EA-bits"
+        )
+
+    # The customer prefix must lie inside the rule's IPv6 prefix, otherwise the
+    # caller is asking for a CE that doesn't belong to this rule.
+    rule_v6_net = IPv6Network(
+        f"{rule['rule_v6_prefix']}/{rule_v6_len}", strict=False
+    )
+    if not rule_v6_net.supernet_of(customer_net):
+        raise ValueError(
+            f"customer prefix {customer_v6_prefix} is not contained in rule "
+            f"prefix {rule['rule_v6_prefix']}/{rule_v6_len}"
+        )
+
     # EA-bits = bits [rule_v6_len, rule_v6_len + ea_length) of customer prefix.
     ea_bits = _bits_at(customer_int, rule_v6_len, ea_length, 128)
 
@@ -100,7 +131,13 @@ def mape_compute(customer_v6_prefix: str, rule: dict) -> dict:
     # Port ranges per RFC 7597 §5.1:
     #   port = m * 2^(16-a) + psid * 2^(16-a-k) + n
     #   m ∈ [0, 2^a),  n ∈ [0, 2^(16-a-k))
-    # m=0 covers well-known ports (0..2^(16-a)-1) and is excluded when a > 0.
+    # When a > 0, the m=0 stride covers ports [0, 2^(16-a)) which includes the
+    # system / well-known port range; RFC 7597 §5.1 specifies this stride is
+    # excluded for a > 0 ("the j=0 case is excluded since it includes ports
+    # less than 2^(16-A)"). The motivation for choosing a > 0 in real
+    # deployments (e.g. JPNE v6プラス: a=6) is precisely to obtain that
+    # exclusion, so they're tied: if the operator wants the well-known range
+    # included they set a=0 and accept a single 2^(16-k)-port block.
     n_per_block = 1 << (16 - a - k)
     m_max = 1 << a
     m_start = 1 if a > 0 else 0
