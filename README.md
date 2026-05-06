@@ -8,7 +8,11 @@ Debian ベースのソフトウェアルーター構成を Ansible で IaC 化�
 ```
 ansible/
 ├── ansible.cfg
-├── inventory/hosts.yml          # 実験機の接続情報
+├── requirements.yml             # Galaxy collections (ansible.posix / community.general)
+├── inventory/
+│   ├── hosts.yml                # グループ構造のみ
+│   └── host_vars/
+│       └── <host>.yml.example   # 実体 *.yml は .gitignored
 ├── playbooks/
 │   ├── bootstrap.yml            # Phase 0: 初期 user / SSH 鍵 / sudo (1 回のみ手動)
 │   ├── site.yml                 # 全 Phase エントリポイント
@@ -36,8 +40,8 @@ ansible/
 
 ```sh
 # 1. ホスト固有の値（IP / SSH ユーザー / NIC 名 / LAN セグメント / 公開鍵）を設定
-cp ansible/host_vars/athena-lab.yml.example ansible/host_vars/athena-lab.yml
-$EDITOR ansible/host_vars/athena-lab.yml
+cp ansible/inventory/host_vars/athena-lab.yml.example ansible/inventory/host_vars/athena-lab.yml
+$EDITOR ansible/inventory/host_vars/athena-lab.yml
 # inventory/hosts.yml には構造（どのグループにどのホストがいるか）だけが入る
 
 # 2. secrets を作成（Phase 3 以降で必要）
@@ -50,19 +54,19 @@ $EDITOR ansible/vars/secrets.yml
 ansible-vault encrypt ansible/vars/secrets.yml
 
 # 3. (新規ホストのみ 1 回) Phase 0 bootstrap
-#    OS インストール直後の root SSH (password) から、管理ユーザー /
-#    鍵 / sudo を整備する。完了後 root SSH ログインは自動で無効化される。
-ansible-playbook \
-  -i ansible/inventory/hosts.yml \
-  -e ansible_user=root --ask-pass \
-  ansible/playbooks/bootstrap.yml
+#    OS install 直後の root SSH (password) から、管理ユーザー / 鍵 / sudo を
+#    整備する。完了後 root SSH ログインは自動で無効化される。
+#    AS_USER は OS install 時に作った捨てユーザー名 (root SSH が無効な
+#    Debian default 環境向け、root password で SSH 可能なら省略可)。
+task play:bootstrap AS_USER=setup
 
 # 4. 疎通確認 (Phase 0 で作った管理ユーザー経由)
 cd ansible
-ansible routers -m ping
+uv run ansible routers -m ping
+cd ..
 
-# 5. 全 Phase 適用（site.yml = network → dns → netbird の順）
-ansible-playbook playbooks/site.yml --ask-vault-pass
+# 5. 全 Phase 適用 (site.yml = network → dns → netbird の順)
+task play:site
 ```
 
 ## ローカルチェック
@@ -101,17 +105,23 @@ push / PR 時は `.github/workflows/check.yml` が同じ `task check` を回す�
 
 ```sh
 # 全 Phase (site.yml が import_playbook している範囲)
-# Phase 3 が含まれるので vault password 入力が必要
-ansible-playbook playbooks/site.yml --ask-vault-pass
+task play:site                            # Phase 3 含むので vault password 入力あり
+task play:site:dry                        # dry-run
 
-# Phase 単位
-ansible-playbook playbooks/network.yml                          # Phase 1
-ansible-playbook playbooks/dns.yml                              # Phase 2
-ansible-playbook playbooks/netbird.yml --ask-vault-pass         # Phase 3
+# Phase 0 (bootstrap)
+task play:bootstrap                       # 再実行 (idempotency 確認用)
+task play:bootstrap AS_USER=setup         # 初回 (root SSH disable 環境向け)
+task play:bootstrap:dry                   # dry-run
+
+# Phase 単位 (cd ansible してから raw ansible-playbook 経由)
+cd ansible
+uv run ansible-playbook -i inventory/hosts.yml playbooks/network.yml                       # Phase 1
+uv run ansible-playbook -i inventory/hosts.yml playbooks/dns.yml                           # Phase 2
+uv run ansible-playbook -i inventory/hosts.yml --ask-vault-pass playbooks/netbird.yml      # Phase 3
 
 # 特定タグだけ
-ansible-playbook playbooks/network.yml --tags nftables
-ansible-playbook playbooks/dns.yml --tags adguard
+uv run ansible-playbook -i inventory/hosts.yml playbooks/network.yml --tags nftables
+uv run ansible-playbook -i inventory/hosts.yml playbooks/dns.yml --tags adguard
 ```
 
 ## 注意
@@ -126,7 +136,7 @@ ansible-playbook playbooks/dns.yml --tags adguard
 - **Phase 3 (Netbird) の前提**: coordination server (Netbird Cloud or
   self-hosted) が稼働済みで、router 用の setup key が発行されていること。
   setup key は vault 暗号化した `vars/secrets.yml` に `netbird_setup_key:`
-  として置く。self-host なら `host_vars/<host>.yml` で
+  として置く。self-host なら `inventory/host_vars/<host>.yml` で
   `netbird_management_url` も上書き。
 - MAP-E 設定（JPNE v6プラス）は本番環境向けで未実装。
 - Phase 完了時点でタグを打つ運用 (`git tag phase-1` 等)。

@@ -46,3 +46,47 @@ tasks:
     desc: Install local pre-commit + pre-push hooks
     cmds:
       - uv run pre-commit install --hook-type pre-commit --hook-type pre-push
+
+  play:bootstrap:
+    # AS_USER を指定した時 (= 初回 bootstrap で setup user 経由) のみ
+    # --ask-become-pass を付ける。host_vars の admin で再実行する場合は
+    # NOPASSWD なので prompt 不要。
+    # 変数名は USER だと shell 環境変数 ($USER) と衝突して常に true 扱い
+    # になるため AS_USER を使う。
+    desc: 'Run Phase 0 bootstrap (AS_USER=<user> overrides ansible_user, e.g. AS_USER=setup)'
+    dir: ansible
+    cmds:
+      - >-
+        uv run ansible-playbook
+        -i inventory/hosts.yml
+        {{if .AS_USER}}-e ansible_user={{.AS_USER}} --ask-become-pass{{end}}
+        playbooks/bootstrap.yml
+
+  play:bootstrap:dry:
+    # Caveat: the bootstrap role uses ansible.posix.authorized_key without
+    # an explicit `path:`, which fails under --check on a fresh host where
+    # the management user does not yet exist (issue #52). This task is
+    # therefore reliable only as an idempotency check against an already-
+    # bootstrapped host. Drop it from your toolbox for first-time runs
+    # until #52 is in.
+    desc: 'Dry-run Phase 0 bootstrap (re-runs only; first-time hits #52)'
+    dir: ansible
+    cmds:
+      - >-
+        uv run ansible-playbook
+        -i inventory/hosts.yml
+        {{if .AS_USER}}-e ansible_user={{.AS_USER}} --ask-become-pass{{end}}
+        --check
+        playbooks/bootstrap.yml
+
+  play:site:
+    desc: 'Run site.yml (all phases)'
+    dir: ansible
+    cmds:
+      - uv run ansible-playbook -i inventory/hosts.yml --ask-vault-pass playbooks/site.yml
+
+  play:site:dry:
+    desc: 'Dry-run site.yml'
+    dir: ansible
+    cmds:
+      - uv run ansible-playbook -i inventory/hosts.yml --ask-vault-pass --check playbooks/site.yml
