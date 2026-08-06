@@ -21,5 +21,8 @@ network_dnsmasq_dns_enabled: true
 
 network_ipv6_forwarding: false
 
+# 既定は RFC1918 のみ。Netbird CGNAT (100.64.0.0/10) 等は host_vars で追加。
 network_ssh_allowed_sources:
-  - 0.0.0.0/0
+  - 10.0.0.0/8
+  - 172.16.0.0/12
+  - 192.168.0.0/16
